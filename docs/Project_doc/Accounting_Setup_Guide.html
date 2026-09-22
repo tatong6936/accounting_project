@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounting CAP Service — Setup Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b22;
+    --bg3: #1c2333;
+    --card: #1e2636;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --code-bg: #161b22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  a { color: var(--accent); }
+
+  /* Header */
+  .page-header {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1a2a1a 50%, #0d1b2a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 32px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(63,185,80,0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .page-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3fb950, #58a6ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+  }
+  .page-header .subtitle { color: var(--muted); font-size: 1rem; max-width: 600px; margin: 0 auto 20px; }
+  .header-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .tag {
+    background: rgba(63,185,80,0.15);
+    border: 1px solid rgba(63,185,80,0.3);
+    color: var(--accent2);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag.blue { background: rgba(88,166,255,0.15); border-color: rgba(88,166,255,0.3); color: var(--accent); }
+  .tag.orange { background: rgba(255,166,87,0.15); border-color: rgba(255,166,87,0.3); color: var(--accent5); }
+  .tag.purple { background: rgba(210,168,255,0.15); border-color: rgba(210,168,255,0.3); color: var(--accent4); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* TOC */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .toc h3 { color: var(--accent2); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .toc ol { padding-left: 20px; columns: 2; }
+  .toc li { margin: 6px 0; break-inside: avoid; }
+  .toc a { color: var(--muted); font-size: 0.9rem; }
+  .toc a:hover { color: var(--text); }
+
+  /* Section */
+  .section { margin-bottom: 56px; }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .num {
+    background: var(--accent2);
+    color: #000;
+    border-radius: 6px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card h4 { color: var(--accent2); font-size: 1rem; margin-bottom: 10px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+  /* Code */
+  pre, code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.6;
+  }
+  code {
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent);
+    font-size: 0.88em;
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .fn { color: #d2a8ff; }
+  .num-c { color: #79c0ff; }
+  .prop { color: #e6edf3; }
+  .val { color: #a5d6ff; }
+  .key { color: #7ee787; }
+
+  /* Steps */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 40px;
+    bottom: -24px;
+    width: 2px;
+    background: var(--border);
+  }
+  .step-num {
+    counter-increment: step;
+    background: var(--accent2);
+    color: #000;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+  }
+  .step-body {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    flex: 1;
+  }
+  .step-body h5 { color: var(--text); font-size: 1rem; margin-bottom: 8px; }
+  .step-body p { color: var(--muted); font-size: 0.9rem; }
+  .step-body ul, .step-body ol { padding-left: 18px; color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+  .step-body li { margin: 4px 0; }
+
+  /* Info box */
+  .info-box {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 10px;
+  }
+  .info-box.blue { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.25); }
+  .info-box.yellow { background: rgba(255,166,87,0.1); border: 1px solid rgba(255,166,87,0.25); color: var(--accent5); }
+  .info-box.green { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.25); color: var(--accent2); }
+  .info-box.red { background: rgba(247,129,102,0.1); border: 1px solid rgba(247,129,102,0.25); color: var(--accent3); }
+  .info-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.5; }
+
+  /* Tool chip */
+  .tools-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+  .tool-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+  }
+  .tool-chip .tname { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+  .tool-chip .tver { color: var(--muted); font-size: 0.8rem; }
+  .tool-chip .tcmd { color: var(--accent); font-family: monospace; font-size: 0.82rem; }
+
+  /* Service table */
+  .data-table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; }
+  .data-table th {
+    background: rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    font-size: 0.88rem;
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Error table */
+  .error-table { width: 100%; border-collapse: collapse; }
+  .error-table th {
+    background: rgba(247,129,102,0.08);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent3);
+    border-bottom: 1px solid rgba(247,129,102,0.2);
+  }
+  .error-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    font-size: 0.88rem;
+    vertical-align: top;
+  }
+  .error-table tr:last-child td { border-bottom: none; }
+  .error-table td:first-child { font-family: monospace; color: var(--accent3); font-size: 0.82rem; }
+  .error-table td:nth-child(2) { color: var(--muted); }
+  .error-table td:nth-child(3) { color: var(--accent2); }
+
+  /* Gitignore viewer */
+  .gitignore-view {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 12px 0;
+  }
+  .gi-section { margin-bottom: 14px; }
+  .gi-comment { color: var(--muted); font-family: monospace; font-size: 13px; }
+  .gi-entry { color: var(--accent3); font-family: monospace; font-size: 13px; }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .badge-new { background: rgba(63,185,80,0.2); color: var(--accent2); }
+  .badge-exist { background: rgba(88,166,255,0.2); color: var(--accent); }
+  .badge-req { background: rgba(247,129,102,0.2); color: var(--accent3); }
+
+  /* Separator */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  /* Deploy box */
+  .deploy-box {
+    background: linear-gradient(135deg, rgba(63,185,80,0.08), rgba(88,166,255,0.08));
+    border: 1px solid rgba(63,185,80,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+
+  /* Footer */
+  .page-footer {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 768px) {
+    .page-header h1 { font-size: 1.6rem; }
+    .toc ol { columns: 1; }
+    .card-grid { grid-template-columns: 1fr; }
+    .tools-grid { flex-direction: column; }
+  }
+  .section { animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .file-tree {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 2;
+  }
+  .ft-dir { color: var(--accent5); }
+  .ft-file { color: var(--text); }
+  .ft-cmt { color: var(--muted); }
+  .ft-imp { color: var(--accent3); font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Accounting CAP Service</h1>
+  <p class="subtitle">คู่มือการสร้างโปรเจ็คตั้งแต่ต้น — Setup Environment, Deploy, และ Troubleshoot</p>
+  <div class="header-tags">
+    <span class="tag">Setup Guide</span>
+    <span class="tag blue">SAP CAP v10</span>
+    <span class="tag orange">BTP Cloud Foundry</span>
+    <span class="tag purple">PostgreSQL</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <h3>สารบัญ</h3>
+    <ol>
+      <li><a href="#prereqs">Prerequisites: Tools ที่ต้องติดตั้ง</a></li>
+      <li><a href="#project-init">สร้าง Project: cds init</a></li>
+      <li><a href="#schema">สร้าง Schema &amp; Service</a></li>
+      <li><a href="#mta">สร้าง mta.yaml</a></li>
+      <li><a href="#xssec">สร้าง xs-security.json</a></li>
+      <li><a href="#btp-services">BTP Services ที่ต้องสร้าง</a></li>
+      <li><a href="#local-dev">Local Dev Setup</a></li>
+      <li><a href="#deploy">Deploy ขึ้น BTP</a></li>
+      <li><a href="#github">GitHub Setup</a></li>
+      <li><a href="#gitignore">ไฟล์ที่ห้าม commit (.gitignore)</a></li>
+      <li><a href="#errors">Error Troubleshooting</a></li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="prereqs">
+    <div class="section-title"><span class="num">1</span> Prerequisites: Tools ที่ต้องติดตั้ง</div>
+
+    <div class="tools-grid">
+      <div class="tool-chip">
+        <div class="tname">Node.js</div>
+        <div class="tver">v20 LTS หรือสูงกว่า</div>
+        <div class="tcmd">node -v</div>
+      </div>
+      <div class="tool-chip">
+        <div class="tname">npm</div>
+        <div class="tver">มากับ Node.js</div>
+        <div class="tcmd">npm -v</div>
+      </div>
+      <div class="tool-chip">
+        <div class="tname">@sap/cds-dk</div>
+        <div class="tver">CAP CLI (global)</div>
+        <div class="tcmd">cds --version</div>
+      </div>
+      <div class="tool-chip">
+        <div class="tname">CF CLI</div>
+        <div class="tver">v8+</div>
+        <div class="tcmd">cf --version</div>
+      </div>
+      <div class="tool-chip">
+        <div class="tname">MBT (MTA Build Tool)</div>
+        <div class="tver">v1.2+</div>
+        <div class="tcmd">mbt --version</div>
+      </div>
+      <div class="tool-chip">
+        <div class="tname">cf multiapps plugin</div>
+        <div class="tver">CF deploy plugin</div>
+        <div class="tcmd">cf plugins</div>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom:10px; font-size:0.9rem;"><strong style="color:var(--text);">ติดตั้ง tools ทั้งหมด:</strong></p>
+    <pre><span class="cmt"># 1. ติดตั้ง SAP CDS CLI (global)</span>
+npm install -g @sap/cds-dk
+
+<span class="cmt"># 2. ติดตั้ง MBT (MTA Build Tool)</span>
+npm install -g mbt
+
+<span class="cmt"># 3. ติดตั้ง CF CLI (ดาวน์โหลดจาก https://github.com/cloudfoundry/cli/releases)</span>
+<span class="cmt"># Windows: scoop install cloudfoundry-cli หรือ download .exe</span>
+
+<span class="cmt"># 4. ติดตั้ง CF multiapps plugin (สำหรับ cf deploy)</span>
+cf install-plugin multiapps
+
+<span class="cmt"># 5. Login ไป BTP Cloud Foundry</span>
+cf login -a https://api.cf.ap11.hana.ondemand.com
+<span class="cmt"># กรอก email, password, org, space ที่ถูกต้อง</span></pre>
+
+    <div class="info-box blue">
+      <span class="info-icon">ℹ</span>
+      <span>Region BTP ของโปรเจ็คนี้คือ <strong>ap11 (Singapore)</strong> — ใช้ API endpoint: <code>https://api.cf.ap11.hana.ondemand.com</code></span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="project-init">
+    <div class="section-title"><span class="num">2</span> สร้าง Project: cds init</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h5>สร้าง CAP Project</h5>
+          <pre><span class="cmt"># สร้างโฟลเดอร์และ init</span>
+mkdir accounting
+cd accounting
+cds init
+
+<span class="cmt"># โครงสร้างที่ได้:</span>
+<span class="cmt"># accounting/</span>
+<span class="cmt">#   db/          &lt;-- schema ที่นี่</span>
+<span class="cmt">#   srv/         &lt;-- service files ที่นี่</span>
+<span class="cmt">#   package.json</span>
+<span class="cmt">#   .cdsrc.json</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h5>ติดตั้ง Dependencies</h5>
+          <pre><span class="cmt"># Core dependencies</span>
+npm install @sap/cds @sap/xssec @sap/audit-logging
+
+<span class="cmt"># PostgreSQL adapter สำหรับ CAP</span>
+npm install @cap-js/postgres
+
+<span class="cmt"># SOAP client (สำหรับ S/4HANA)</span>
+npm install soap node-fetch
+
+<span class="cmt"># Express (CAP ใช้ internally)</span>
+npm install express
+
+<span class="cmt"># Dev dependencies</span>
+npm install -D @sap/cds-dk sqlite3</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h5>อัปเดต package.json</h5>
+          <pre>{
+  <span class="key">"name"</span>: <span class="str">"accounting"</span>,
+  <span class="key">"version"</span>: <span class="str">"1.0.0"</span>,
+  <span class="key">"description"</span>: <span class="str">"Accounting CAP Service"</span>,
+  <span class="key">"main"</span>: <span class="str">"index.js"</span>,
+  <span class="key">"scripts"</span>: {
+    <span class="key">"start"</span>: <span class="str">"cds-serve"</span>,
+    <span class="key">"dev"</span>: <span class="str">"cds watch"</span>,
+    <span class="key">"build"</span>: <span class="str">"cds build --production"</span>
+  },
+  <span class="key">"cds"</span>: {
+    <span class="key">"requires"</span>: {
+      <span class="key">"db"</span>: {
+        <span class="key">"kind"</span>: <span class="str">"postgres"</span>
+      },
+      <span class="key">"auth"</span>: {
+        <span class="key">"kind"</span>: <span class="str">"xsuaa"</span>
+      }
+    }
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="schema">
+    <div class="section-title"><span class="num">3</span> สร้าง Schema &amp; Service</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h5>สร้าง db/schema.cds</h5>
+          <pre><span class="kw">namespace</span> accounting;
+<span class="kw">using</span> { cuid } <span class="kw">from</span> <span class="str">'@sap/cds/common'</span>;
+
+<span class="kw">entity</span> <span class="fn">Batches</span> : cuid {
+  hisDocumentType         : String(30);   <span class="cmt">// INVOICE_OPD, RECEIPT_OPD, ...</span>
+  hospitalCode            : String(20);
+  accountingDocumentNumber: String(50);
+  billDate                : Date;
+  currency                : String(3);
+  hospitalNumber          : String(50);
+  visitNumber             : String(50);
+  coverageType            : String(50);
+  patientGroup            : String(50);
+  marketChannel           : String(50);
+  items                   : <span class="kw">Composition of many</span> Items <span class="kw">on</span> items.batch = $self;
+  payments                : <span class="kw">Composition of many</span> Payments <span class="kw">on</span> payments.batch = $self;
+  journalEntryPostings    : <span class="kw">Composition of many</span> JournalEntryPostings <span class="kw">on</span> journalEntryPostings.batch = $self;
+}
+
+<span class="kw">entity</span> <span class="fn">Items</span> : cuid {
+  batch                   : <span class="kw">Association to</span> Batches;
+  itemCode                : String(50);
+  itemName                : String(200);
+  totalAmount             : <span class="kw">Decimal</span>(15,2);
+  discountAmount          : <span class="kw">Decimal</span>(15,2);
+  netAmount               : <span class="kw">Decimal</span>(15,2);
+  billingGroup            : String(50);
+  requestingDepartmentCode: String(50);
+  performingDepartmentCode: String(50);
+  patientType             : String(50);
+  orderCategory           : String(50);
+  orderSubCategory        : String(50);
+  fiPosting               : <span class="kw">Association to</span> JournalEntryPostings;
+}
+
+<span class="kw">entity</span> <span class="fn">Payments</span> : cuid {
+  batch        : <span class="kw">Association to</span> Batches;
+  paymentMethod: String(20);  <span class="cmt">// CASH, TRANSFER, EDC, QR, VOUCHER, DEPOSIT</span>
+  paymentAmount: <span class="kw">Decimal</span>(15,2);
+  bankCode     : String(20);
+  edcTerminalId: String(50);
+}
+
+<span class="kw">entity</span> <span class="fn">JournalEntryPostings</span> : cuid {
+  batch                   : <span class="kw">Association to</span> Batches;
+  JournalEntryDocumentNumber: String(20);
+  JournalEntryCompanyCode : String(10);
+  JournalEntryYear        : String(4);
+  JournalEntryStatus      : String(10);  <span class="cmt">// POSTED / ERROR</span>
+  messages                : <span class="kw">Composition of many</span> JournalEntryMessages <span class="kw">on</span> messages.journalEntryPosting = $self;
+}
+
+<span class="kw">entity</span> <span class="fn">JournalEntryMessages</span> : cuid {
+  journalEntryPosting: <span class="kw">Association to</span> JournalEntryPostings;
+  lineNumber         : Integer;
+  message            : String(500);
+  msgType            : String(1);  <span class="cmt">// S=Success, I=Info, E=Error, W=Warning</span>
+}</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h5>สร้าง srv/accounting-service.cds</h5>
+          <pre><span class="kw">using</span> { accounting } <span class="kw">from</span> <span class="str">'../db/schema'</span>;
+
+<span class="kw">service</span> AccountingService @(path: <span class="str">'/accounting'</span>, requires: <span class="str">'authenticated-user'</span>) {
+
+  <span class="kw">entity</span> Batches            <span class="kw">as projection on</span> accounting.Batches;
+  <span class="kw">entity</span> Items              <span class="kw">as projection on</span> accounting.Items;
+  <span class="kw">entity</span> Payments           <span class="kw">as projection on</span> accounting.Payments;
+  <span class="kw">entity</span> JournalEntryPostings <span class="kw">as projection on</span> accounting.JournalEntryPostings;
+  <span class="kw">entity</span> JournalEntryMessages <span class="kw">as projection on</span> accounting.JournalEntryMessages;
+
+  <span class="cmt">// Action: รับข้อมูลจาก HIS</span>
+  <span class="kw">action</span> <span class="fn">import</span>(batches: array of {
+    hisDocumentType: String; hospitalCode: String;
+    accountingDocumentNumber: String; billDate: Date; currency: String;
+    hospitalNumber: String; visitNumber: String; coverageType: String;
+    patientGroup: String; marketChannel: String;
+    items: array of {}; payments: array of {};
+  }) <span class="kw">returns</span> array of String;
+
+  <span class="cmt">// Action: ส่ง FI Document ไป S/4HANA</span>
+  <span class="kw">action</span> <span class="fn">postFI</span>(
+    batchId: String;
+    hisDocumentType: String;
+    billDate: Date;
+  ) <span class="kw">returns</span> {};
+}</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h5>สร้าง srv/accounting-service.js</h5>
+          <p>ไฟล์หลักที่ implement logic — structure หลัก:</p>
+          <pre><span class="kw">const</span> cds = <span class="fn">require</span>(<span class="str">'@sap/cds'</span>);
+<span class="kw">const</span> { postJournalEntry } = <span class="fn">require</span>(<span class="str">'./s4h-journal.cjs'</span>);
+<span class="kw">const</span> { fetchConfig } = <span class="fn">require</span>(<span class="str">'./central-config-client'</span>);
+
+<span class="kw">module.exports</span> = <span class="kw">class</span> AccountingService <span class="kw">extends</span> cds.ApplicationService {
+  <span class="kw">async</span> <span class="fn">init</span>() {
+    <span class="kw">this</span>.<span class="fn">on</span>(<span class="str">'import'</span>, <span class="kw">async</span> (req) =&gt; { <span class="cmt">/* insert batches */</span> });
+    <span class="kw">this</span>.<span class="fn">on</span>(<span class="str">'postFI'</span>, <span class="kw">async</span> (req) =&gt; { <span class="cmt">/* package loop + processBatch */</span> });
+    <span class="kw">await super</span>.<span class="fn">init</span>();
+  }
+
+  <span class="kw">async</span> <span class="fn">processBatch</span>(batch) {
+    <span class="cmt">// 1. เช็ค skip ถ้า POSTED แล้ว</span>
+    <span class="cmt">// 2. ดึง Items จาก DB</span>
+    <span class="cmt">// 3. ดึง config 5 ตาราง จาก central-config (parallel)</span>
+    <span class="cmt">// 4. ดึง Payments จาก DB</span>
+    <span class="cmt">// 5. Group items by billingGroup</span>
+    <span class="cmt">// 6. เรียก postJournalEntry ต่อ group</span>
+    <span class="cmt">// 7. บันทึก JournalEntryPostings + Messages</span>
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="mta">
+    <div class="section-title"><span class="num">4</span> สร้าง mta.yaml</div>
+
+    <p style="color:var(--muted); margin-bottom: 12px; font-size:0.9rem;">ไฟล์นี้กำหนดโครงสร้าง MTA (Multi-Target Application) สำหรับ deploy บน BTP Cloud Foundry</p>
+
+    <pre>_schema-version: <span class="str">"3.3.0"</span>
+ID: accounting
+version: 1.0.0
+
+modules:
+  - name: accounting-srv
+    type: nodejs
+    path: gen/srv             <span class="cmt"># path หลัง cds build</span>
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 512M
+      disk-quota: 1024M
+    requires:
+      - name: accounting-auth
+      - name: accounting-postgres
+      - name: accounting-destination
+      - name: central-config-auth-binding
+    provides:
+      - name: accounting-srv-api
+        properties:
+          srv-url: ${default-url}
+
+  - name: accounting-db-deployer
+    type: hdb
+    path: gen/db              <span class="cmt"># deploy schema ขึ้น PostgreSQL</span>
+    requires:
+      - name: accounting-postgres
+
+resources:
+  - name: accounting-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+
+  - name: accounting-postgres
+    type: org.cloudfoundry.existing-service  <span class="cmt"># ใช้ existing service!</span>
+    parameters:
+      service-name: my-cap-postgres-db       <span class="cmt"># ชื่อ service ที่มีอยู่แล้ว</span>
+
+  - name: accounting-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+
+  - name: central-config-auth-binding
+    type: org.cloudfoundry.existing-service  <span class="cmt"># ใช้ existing service!</span>
+    parameters:
+      service-name: central-config-auth      <span class="cmt"># shared XSUAA จาก central-config</span></pre>
+
+    <div class="info-box yellow">
+      <span class="info-icon">⚡</span>
+      <span><strong>สำคัญ:</strong> <code>accounting-postgres</code> และ <code>central-config-auth-binding</code> ใช้ type <code>org.cloudfoundry.existing-service</code> — ไม่ใช่ managed-service ดังนั้น service เหล่านี้ต้องมีอยู่ใน CF Space ก่อน</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="xssec">
+    <div class="section-title"><span class="num">5</span> สร้าง xs-security.json</div>
+
+    <pre>{
+  <span class="key">"xsappname"</span>: <span class="str">"accounting"</span>,
+  <span class="key">"tenant-mode"</span>: <span class="str">"dedicated"</span>,
+  <span class="key">"description"</span>: <span class="str">"Accounting CAP Service Security"</span>,
+  <span class="key">"scopes"</span>: [
+    {
+      <span class="key">"name"</span>: <span class="str">"$XSAPPNAME.User"</span>,
+      <span class="key">"description"</span>: <span class="str">"Accounting Service User"</span>
+    }
+  ],
+  <span class="key">"role-templates"</span>: [
+    {
+      <span class="key">"name"</span>: <span class="str">"AccountingUser"</span>,
+      <span class="key">"description"</span>: <span class="str">"Accounting Service User Role"</span>,
+      <span class="key">"scope-references"</span>: [<span class="str">"$XSAPPNAME.User"</span>],
+      <span class="key">"attribute-references"</span>: []
+    }
+  ],
+  <span class="key">"role-collections"</span>: [
+    {
+      <span class="key">"name"</span>: <span class="str">"AccountingUserCollection"</span>,
+      <span class="key">"description"</span>: <span class="str">"Accounting Service Users"</span>,
+      <span class="key">"role-template-references"</span>: [<span class="str">"$XSAPPNAME.AccountingUser"</span>]
+    }
+  ],
+  <span class="key">"oauth2-configuration"</span>: {
+    <span class="key">"grant-types"</span>: [<span class="str">"client_credentials"</span>, <span class="str">"password"</span>],
+    <span class="key">"token-validity"</span>: 43200
+  }
+}</pre>
+
+    <div class="info-box blue">
+      <span class="info-icon">ℹ</span>
+      <span>หลัง deploy แล้ว ต้องไป BTP Cockpit → Security → Role Collections → กด assign user ให้ <code>AccountingUserCollection</code></span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="btp-services">
+    <div class="section-title"><span class="num">6</span> BTP Services ที่ต้องสร้าง</div>
+
+    <div class="card" style="overflow-x: auto; margin-bottom: 16px;">
+      <table class="data-table">
+        <tr>
+          <th>Service Name (ใน CF)</th>
+          <th>Type</th>
+          <th>Plan</th>
+          <th>Action</th>
+          <th>หมายเหตุ</th>
+        </tr>
+        <tr>
+          <td><code>my-cap-postgres-db</code></td>
+          <td>PostgreSQL on BTP</td>
+          <td>free / standard</td>
+          <td><span class="badge badge-exist">EXISTING</span></td>
+          <td>ต้องมีอยู่ก่อน — ใช้ร่วมกับ project อื่น</td>
+        </tr>
+        <tr>
+          <td><code>central-config-auth</code></td>
+          <td>XSUAA</td>
+          <td>application</td>
+          <td><span class="badge badge-exist">EXISTING</span></td>
+          <td>ต้องมีอยู่ก่อน — เป็น XSUAA ของ central-config-srv</td>
+        </tr>
+        <tr>
+          <td><code>accounting-auth</code></td>
+          <td>XSUAA</td>
+          <td>application</td>
+          <td><span class="badge badge-new">AUTO (mta.yaml)</span></td>
+          <td>สร้างอัตโนมัติตอน cf deploy</td>
+        </tr>
+        <tr>
+          <td><code>accounting-destination</code></td>
+          <td>Destination Service</td>
+          <td>lite</td>
+          <td><span class="badge badge-new">AUTO (mta.yaml)</span></td>
+          <td>สร้างอัตโนมัติ — ใช้เชื่อม S/4HANA SOAP</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info-box red">
+      <span class="info-icon">✗</span>
+      <span><strong>ต้องทำก่อน deploy:</strong> ตรวจสอบว่า <code>my-cap-postgres-db</code> และ <code>central-config-auth</code> มีอยู่ใน CF Space ที่จะ deploy ด้วยคำสั่ง <code>cf services</code></span>
+    </div>
+
+    <div class="steps" style="margin-top: 20px;">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h5>สร้าง PostgreSQL Service (ถ้ายังไม่มี)</h5>
+          <pre><span class="cmt"># ดู marketplace ก่อน</span>
+cf marketplace | grep postgresql
+
+<span class="cmt"># สร้าง service (ใช้ plan ที่ available ใน org)</span>
+cf create-service postgresql-db free my-cap-postgres-db
+
+<span class="cmt"># ตรวจสอบ</span>
+cf service my-cap-postgres-db</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h5>ตั้งค่า Destination สำหรับ S/4HANA SOAP</h5>
+          <p>หลัง deploy แล้ว ไป BTP Cockpit → Connectivity → Destinations → New Destination:</p>
+          <pre>Name: S4H_SOAP
+Type: HTTP
+URL: https://&lt;s4h-host&gt;/sap/bc/srt/scs/sap/journalentrycreaterequestconfi
+Authentication: BasicAuthentication
+User: &lt;s4h-user&gt;
+Password: &lt;s4h-password&gt;</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h5>ดึง central-config credentials</h5>
+          <pre><span class="cmt"># ดึง VCAP_SERVICES จาก central-config-srv</span>
+cf env central-config-srv
+
+<span class="cmt"># หาค่า: clientid, clientsecret, url จาก xsuaa section</span>
+<span class="cmt"># นำค่าไปใส่ใน .env (local dev) หรือ cf set-env (production)</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="local-dev">
+    <div class="section-title"><span class="num">7</span> Local Dev Setup</div>
+
+    <div class="info-box yellow">
+      <span class="info-icon">⚡</span>
+      <span>Local dev ต้อง connect กับ PostgreSQL ใน BTP โดยตรงผ่าน SSH tunnel — ไม่ใช่ local DB</span>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h5>เปิด SSH Tunnel ไป PostgreSQL</h5>
+          <p>เปิด terminal แยก และเปิดค้างไว้ตลอดระหว่าง dev:</p>
+          <pre><span class="cmt"># เปิด tunnel: local port 15432 → BTP PostgreSQL port 5887</span>
+cf ssh accounting-srv -L 15432:&lt;pg-host&gt;:5887
+
+<span class="cmt"># &lt;pg-host&gt; ดูจาก cf env accounting-srv → VCAP_SERVICES → postgresql-db → host</span>
+<span class="cmt"># ถ้า accounting-srv ยังไม่ได้ deploy ให้ใช้ service ที่ deploy แล้วตัวอื่น</span>
+<span class="cmt"># เช่น cf ssh central-config-srv -L 15432:&lt;pg-host&gt;:5887</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h5>สร้าง .cdsrc-private.json</h5>
+          <p>ไฟล์นี้บอก CAP ให้ connect PostgreSQL ผ่าน SSH tunnel:</p>
+          <pre>{
+  <span class="key">"requires"</span>: {
+    <span class="key">"db"</span>: {
+      <span class="key">"kind"</span>: <span class="str">"postgres"</span>,
+      <span class="key">"credentials"</span>: {
+        <span class="key">"host"</span>: <span class="str">"localhost"</span>,
+        <span class="key">"port"</span>: <span class="num-c">15432</span>,
+        <span class="key">"database"</span>: <span class="str">"&lt;database-name&gt;"</span>,
+        <span class="key">"user"</span>: <span class="str">"&lt;username&gt;"</span>,
+        <span class="key">"password"</span>: <span class="str">"&lt;password&gt;"</span>,
+        <span class="key">"schema"</span>: <span class="str">"accounting"</span>
+      }
+    }
+  }
+}
+
+<span class="cmt">// ดึงค่าจาก: cf env accounting-srv → VCAP_SERVICES → postgresql-db → credentials</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h5>สร้าง .env (สำหรับ XSUAA + Destination)</h5>
+          <p>ใช้ simulate VCAP_SERVICES ใน local environment:</p>
+          <pre><span class="cmt"># .env — ไม่ commit ไป git!</span>
+CENTRAL_CONFIG_CLIENT_ID=sb-central-config-&lt;uuid&gt;
+CENTRAL_CONFIG_CLIENT_SECRET=&lt;secret-from-cf-env&gt;
+CENTRAL_CONFIG_TOKEN_URL=https://&lt;subdomain&gt;.authentication.ap11.hana.ondemand.com/oauth/token
+CENTRAL_CONFIG_URL=https://central-config-srv.cfapps.ap11.hana.ondemand.com
+
+<span class="cmt"># Destination (S/4HANA SOAP URL สำหรับ local)</span>
+S4H_SOAP_URL=https://&lt;s4h-host&gt;/sap/bc/srt/scs/sap/journalentrycreaterequestconfi
+S4H_SOAP_USER=&lt;user&gt;
+S4H_SOAP_PASSWORD=&lt;password&gt;</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h5>รัน Development Server</h5>
+          <pre><span class="cmt"># ต้องเปิด SSH tunnel ก่อน (step 1)</span>
+<span class="cmt"># ต้องมี .cdsrc-private.json และ .env พร้อมแล้ว</span>
+
+cds serve --profile hybrid
+
+<span class="cmt"># หรือถ้าต้องการ watch (auto-reload เมื่อแก้ไขไฟล์)</span>
+cds watch --profile hybrid</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h5>Deploy Schema ขึ้น PostgreSQL (ครั้งแรก หรือเมื่อแก้ schema)</h5>
+          <pre><span class="cmt"># build ก่อน</span>
+cds build --production
+
+<span class="cmt"># deploy schema (ต้องเปิด SSH tunnel)</span>
+npx cds-pg deploy --to postgres --from db --profile hybrid</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="deploy">
+    <div class="section-title"><span class="num">8</span> Deploy ขึ้น BTP</div>
+
+    <div class="deploy-box">
+      <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;"><strong style="color:var(--text);">Deploy Process (2 ขั้นตอนหลัก):</strong></p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num" style="background:var(--accent2);">1</div>
+          <div class="step-body">
+            <h5>Build MTA Archive</h5>
+            <pre><span class="cmt"># Build ไฟล์ .mtar ที่จะ deploy</span>
+mbt build
+
+<span class="cmt"># ผลลัพธ์: mta_archives/accounting_1.0.0.mtar</span>
+<span class="cmt"># ถ้า error ให้ตรวจสอบ mta.yaml syntax ก่อน</span></pre>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:var(--accent2);">2</div>
+          <div class="step-body">
+            <h5>Deploy ขึ้น Cloud Foundry</h5>
+            <pre><span class="cmt"># ตรวจสอบว่า login CF ถูก org/space ก่อน</span>
+cf target
+
+<span class="cmt"># Deploy</span>
+cf deploy mta_archives/accounting_1.0.0.mtar
+
+<span class="cmt"># ดู log ระหว่าง deploy</span>
+cf deploy mta_archives/accounting_1.0.0.mtar --no-confirm
+
+<span class="cmt"># หลัง deploy: ตรวจสอบ status</span>
+cf apps
+cf app accounting-srv</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box blue" style="margin-top: 12px;">
+      <span class="info-icon">ℹ</span>
+      <span><strong>แก้ version:</strong> ก่อน deploy ใหม่ ควรอัปเดต version ใน <code>mta.yaml</code> (เช่น 1.0.1) — ไม่จำเป็นต้องทำทุกครั้ง แต่ช่วยให้ track version ได้</span>
+    </div>
+
+    <p style="color:var(--muted); font-size:0.9rem; margin-top: 20px; margin-bottom:10px;"><strong style="color:var(--text);">ตรวจสอบหลัง Deploy:</strong></p>
+    <pre><span class="cmt"># ดู URL ของ app</span>
+cf app accounting-srv | grep routes
+
+<span class="cmt"># ดู log realtime</span>
+cf logs accounting-srv --recent
+cf logs accounting-srv         <span class="cmt"># streaming</span>
+
+<span class="cmt"># ดู env vars (ตรวจสอบ VCAP_SERVICES)</span>
+cf env accounting-srv
+
+<span class="cmt"># Restart ถ้าจำเป็น</span>
+cf restart accounting-srv</pre>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="github">
+    <div class="section-title"><span class="num">9</span> GitHub Setup</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h5>Initialize Git Repository</h5>
+          <pre>git init
+git add .
+git commit -m "Initial commit: Accounting CAP Service"</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h5>สร้าง Repository บน GitHub</h5>
+          <p>ไปที่ github.com → New Repository → ตั้งชื่อ <code>accounting</code> หรือ <code>cap-accounting-service</code> → สร้างเป็น Private (ข้อมูล config อาจ sensitive)</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h5>Push ขึ้น GitHub</h5>
+          <pre>git remote add origin https://github.com/&lt;org&gt;/accounting.git
+git branch -M main
+git push -u origin main</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h5>ตรวจสอบ .gitignore ก่อน push</h5>
+          <p>ดูรายละเอียดในหัวข้อ 10 — ห้าม commit ไฟล์ที่มี credentials</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="gitignore">
+    <div class="section-title"><span class="num">10</span> ไฟล์ที่ห้าม commit (.gitignore)</div>
+
+    <div class="info-box red">
+      <span class="info-icon">✗</span>
+      <span><strong>สำคัญมาก!</strong> ไฟล์ด้านล่างมี credentials และ secrets — ถ้า commit ขึ้น GitHub จะ expose ข้อมูลสำคัญ</span>
+    </div>
+
+    <div class="gitignore-view">
+      <div class="gi-section">
+        <div class="gi-comment"># ===== CREDENTIALS & SECRETS (ห้าม commit เด็ดขาด!) =====</div>
+        <div class="gi-entry">.env</div>
+        <div class="gi-entry">.cdsrc-private.json</div>
+        <div class="gi-entry">*.env</div>
+        <div class="gi-entry">*.secret</div>
+        <div class="gi-entry">credentials.json</div>
+        <div class="gi-entry">default-env.json</div>
+      </div>
+      <div class="gi-section">
+        <div class="gi-comment"># ===== BUILD ARTIFACTS =====</div>
+        <div class="gi-entry">gen/</div>
+        <div class="gi-entry">mta_archives/</div>
+        <div class="gi-entry">dist/</div>
+        <div class="gi-entry">.build/</div>
+      </div>
+      <div class="gi-section">
+        <div class="gi-comment"># ===== NODE MODULES =====</div>
+        <div class="gi-entry">node_modules/</div>
+        <div class="gi-entry">package-lock.json   # optional</div>
+      </div>
+      <div class="gi-section">
+        <div class="gi-comment"># ===== IDE & OS =====</div>
+        <div class="gi-entry">.vscode/</div>
+        <div class="gi-entry">.idea/</div>
+        <div class="gi-entry">.DS_Store</div>
+        <div class="gi-entry">Thumbs.db</div>
+        <div class="gi-entry">*.swp</div>
+      </div>
+      <div class="gi-section">
+        <div class="gi-comment"># ===== CAP specific =====</div>
+        <div class="gi-entry">.cds-cached/</div>
+        <div class="gi-entry">*.log</div>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); font-size:0.9rem; margin-top: 16px; margin-bottom:10px;"><strong style="color:var(--text);">สร้าง .gitignore ด้วยคำสั่ง:</strong></p>
+    <pre><span class="cmt"># สร้าง .gitignore อัตโนมัติสำหรับ Node.js</span>
+curl -o .gitignore https://www.toptal.com/developers/gitignore/api/node,macos,windows
+
+<span class="cmt"># แล้วเพิ่ม entries เหล่านี้เข้าไปเองที่ท้ายไฟล์:</span>
+<span class="cmt"># .env, .cdsrc-private.json, gen/, mta_archives/</span></pre>
+
+    <div class="info-box yellow" style="margin-top: 12px;">
+      <span class="info-icon">⚡</span>
+      <span><strong>ถ้า commit ผิดพลาด:</strong> ให้ทำ <code>git rm --cached .env</code> แล้วเพิ่ม .env ใน .gitignore ก่อน commit อีกครั้ง — อย่าลืม rotate credentials ด้วยถ้า push ขึ้น remote แล้ว</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="errors">
+    <div class="section-title"><span class="num">11</span> Error Troubleshooting</div>
+
+    <div class="card" style="overflow-x: auto; border-color: rgba(247,129,102,0.2);">
+      <table class="error-table">
+        <tr>
+          <th>Error Message</th>
+          <th>สาเหตุ</th>
+          <th>วิธีแก้</th>
+        </tr>
+        <tr>
+          <td>Tax statement item missing for tax code O0</td>
+          <td>ProductTaxItem ไม่ได้ถูกส่งใน SOAP body หรือ TaxItemClassification ไม่ถูก</td>
+          <td>ตรวจสอบ buildRequestBody ว่ามี &lt;ProductTaxItem&gt; พร้อม TaxCode=O0 และ TaxItemClassification=MWS</td>
+        </tr>
+        <tr>
+          <td>KSCHL is empty</td>
+          <td>SAP ยังไม่ได้ config ConditionType สำหรับ tax code O0 ในระบบ S/4HANA</td>
+          <td>ให้ SAP Basis/Config admin เข้าไป config customizing ใน S/4HANA — ไม่ใช่ปัญหาของ code</td>
+        </tr>
+        <tr>
+          <td>G/L account requires valid tax code</td>
+          <td>GL account ที่ใช้เป็น tax-relevant แต่ไม่ได้ส่ง TaxCode ในบาง item line</td>
+          <td>ตรวจสอบ buildItemLines ว่าทุก line ที่ใช้ GL นั้นมี &lt;TaxCode&gt; ด้วย</td>
+        </tr>
+        <tr>
+          <td>central-config credentials not found</td>
+          <td>Env vars สำหรับ XSUAA ไม่ได้ถูก set ในเทอร์มินัลที่รัน cds serve</td>
+          <td>ตรวจสอบ .env ว่ามีค่าครบ แล้ว source .env หรือรัน cds serve ใน terminal เดียวกัน</td>
+        </tr>
+        <tr>
+          <td>Connection to localhost:15432 refused</td>
+          <td>SSH tunnel ไป PostgreSQL ไม่ได้เปิดอยู่</td>
+          <td>เปิด terminal แยก แล้วรัน: cf ssh accounting-srv -L 15432:&lt;pg-host&gt;:5887</td>
+        </tr>
+        <tr>
+          <td>XSUAA 401 Unauthorized</td>
+          <td>XSUAA client_secret เก่าหรือหมดอายุ</td>
+          <td>รัน cf env central-config-srv แล้วดึง clientsecret ใหม่ไปอัปเดตใน .env หรือ cf set-env</td>
+        </tr>
+        <tr>
+          <td>ECONNREFUSED PostgreSQL</td>
+          <td>SSH tunnel หลุดหรือ PostgreSQL credentials ผิด</td>
+          <td>ตรวจสอบ tunnel ว่ายังทำงาน + ตรวจสอบค่าใน .cdsrc-private.json ให้ตรงกับ VCAP_SERVICES</td>
+        </tr>
+        <tr>
+          <td>Module not found: s4h-journal.cjs</td>
+          <td>ไม่พบไฟล์ หรือ path ผิดใน require()</td>
+          <td>ตรวจสอบว่าไฟล์อยู่ที่ srv/s4h-journal.cjs และ import path ใน accounting-service.js ถูกต้อง</td>
+        </tr>
+        <tr>
+          <td>cf deploy fails: service not found</td>
+          <td>existing service ที่ระบุใน mta.yaml ไม่มีใน CF Space</td>
+          <td>รัน cf services เพื่อตรวจสอบ แล้วแก้ service-name ใน mta.yaml ให้ตรงกัน</td>
+        </tr>
+        <tr>
+          <td>cds build failed: cannot resolve module</td>
+          <td>package.json ขาด dependency</td>
+          <td>รัน npm install แล้วลอง cds build ใหม่</td>
+        </tr>
+        <tr>
+          <td>503 Service Unavailable (หลัง deploy)</td>
+          <td>App crash ระหว่าง startup — มักเกิดจาก missing env หรือ service binding ผิด</td>
+          <td>รัน cf logs accounting-srv --recent เพื่อดู error แล้วแก้ตาม log</td>
+        </tr>
+        <tr>
+          <td>Posting is blocked (SAP error)</td>
+          <td>วันที่ในเอกสาร (PostingDate) ไม่อยู่ใน open posting period ของ SAP</td>
+          <td>ให้ SAP Finance open posting period สำหรับเดือนนั้น หรือใช้วันที่ที่ period ยัง open อยู่</td>
+        </tr>
+      </table>
+    </div>
+
+    <hr class="sep">
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>Quick Debug Commands</h4>
+        <pre style="font-size: 12px; margin-top: 8px;"><span class="cmt"># ดู app status</span>
+cf app accounting-srv
+
+<span class="cmt"># ดู recent logs</span>
+cf logs accounting-srv --recent
+
+<span class="cmt"># ดู env vars ทั้งหมด</span>
+cf env accounting-srv
+
+<span class="cmt"># Restart app</span>
+cf restart accounting-srv
+
+<span class="cmt"># SSH เข้า container</span>
+cf ssh accounting-srv</pre>
+      </div>
+      <div class="card">
+        <h4>ตรวจสอบ Services</h4>
+        <pre style="font-size: 12px; margin-top: 8px;"><span class="cmt"># ดู services ทั้งหมดใน space</span>
+cf services
+
+<span class="cmt"># ดู service keys</span>
+cf service-keys my-cap-postgres-db
+
+<span class="cmt"># ดู service binding ของ app</span>
+cf app accounting-srv
+
+<span class="cmt"># ตรวจสอบ destination</span>
+<span class="cmt"># BTP Cockpit → Connectivity → Destinations</span></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Accounting CAP Service — Setup Guide &nbsp;|&nbsp; Stack: SAP CAP v10 / Node.js / @cap-js/postgres / BTP ap11
+</div>
+
+</body>
+</html>

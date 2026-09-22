@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accounting CAP Service — Flow & Architecture</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b22;
+    --bg3: #1c2333;
+    --card: #1e2636;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --code-bg: #161b22;
+    --tag-blue: #1f6feb;
+    --tag-green: #196127;
+    --tag-red: #6e1a1a;
+    --tag-purple: #3d1f6e;
+    --tag-orange: #6e3d1f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Header */
+  .page-header {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1a2744 50%, #0d1b2a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 32px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(88,166,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .page-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #58a6ff, #a371f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+  }
+  .page-header .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto 20px;
+  }
+  .header-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .tag {
+    background: rgba(88,166,255,0.15);
+    border: 1px solid rgba(88,166,255,0.3);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag.green { background: rgba(63,185,80,0.15); border-color: rgba(63,185,80,0.3); color: var(--accent2); }
+  .tag.orange { background: rgba(255,166,87,0.15); border-color: rgba(255,166,87,0.3); color: var(--accent5); }
+  .tag.purple { background: rgba(210,168,255,0.15); border-color: rgba(210,168,255,0.3); color: var(--accent4); }
+  .tag.red { background: rgba(247,129,102,0.15); border-color: rgba(247,129,102,0.3); color: var(--accent3); }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* TOC */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .toc h3 { color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: var(--muted); font-size: 0.9rem; }
+  .toc a:hover { color: var(--text); }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .num {
+    background: var(--accent);
+    color: #000;
+    border-radius: 6px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card h4 { color: var(--accent); font-size: 1rem; margin-bottom: 10px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+    row-gap: 16px;
+  }
+  .arch-box {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .arch-box .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .arch-box .name { font-size: 0.95rem; font-weight: 600; margin-top: 2px; }
+  .arch-box.his { border-color: var(--accent5); }
+  .arch-box.his .name { color: var(--accent5); }
+  .arch-box.cap { border-color: var(--accent); }
+  .arch-box.cap .name { color: var(--accent); }
+  .arch-box.pg { border-color: var(--accent2); }
+  .arch-box.pg .name { color: var(--accent2); }
+  .arch-box.s4 { border-color: var(--accent4); }
+  .arch-box.s4 .name { color: var(--accent4); }
+  .arch-box.cfg { border-color: var(--accent3); }
+  .arch-box.cfg .name { color: var(--accent3); }
+  .arch-arrow {
+    color: var(--muted);
+    font-size: 1.4rem;
+    padding: 0 8px;
+    align-self: center;
+  }
+
+  /* Code block */
+  pre, code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.6;
+  }
+  code {
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent);
+    font-size: 0.88em;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .fn { color: #d2a8ff; }
+  .num { color: #79c0ff; }
+  .prop { color: #e6edf3; }
+  .val { color: #a5d6ff; }
+
+  /* Flow steps */
+  .flow-steps { counter-reset: flow; }
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 38px;
+    bottom: -16px;
+    width: 2px;
+    background: var(--border);
+  }
+  .step-num {
+    counter-increment: flow;
+    background: var(--accent);
+    color: #000;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+  }
+  .step-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    flex: 1;
+  }
+  .step-content h5 { color: var(--text); font-size: 0.95rem; margin-bottom: 6px; }
+  .step-content p, .step-content li { color: var(--muted); font-size: 0.9rem; }
+  .step-content ul { padding-left: 18px; margin-top: 6px; }
+  .step-content li { margin: 3px 0; }
+
+  /* Entity table */
+  .entity-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .entity-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .entity-name { font-size: 1.1rem; font-weight: 700; }
+  .entity-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .entity-table { width: 100%; border-collapse: collapse; }
+  .entity-table th {
+    background: rgba(255,255,255,0.04);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .entity-table td {
+    padding: 9px 16px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    font-size: 0.88rem;
+  }
+  .entity-table tr:last-child td { border-bottom: none; }
+  .entity-table td:first-child { font-family: monospace; color: var(--accent); }
+  .entity-table td:nth-child(2) { color: var(--accent5); }
+  .entity-table td:nth-child(3) { color: var(--muted); }
+
+  /* Status badges */
+  .status-posted {
+    background: rgba(63,185,80,0.2);
+    border: 1px solid rgba(63,185,80,0.4);
+    color: #3fb950;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-error {
+    background: rgba(247,129,102,0.2);
+    border: 1px solid rgba(247,129,102,0.4);
+    color: #f78166;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Info box */
+  .info-box {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 10px;
+  }
+  .info-box.blue { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.25); }
+  .info-box.yellow { background: rgba(255,166,87,0.1); border: 1px solid rgba(255,166,87,0.25); color: var(--accent5); }
+  .info-box.green { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.25); color: var(--accent2); }
+  .info-box.red { background: rgba(247,129,102,0.1); border: 1px solid rgba(247,129,102,0.25); color: var(--accent3); }
+  .info-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.5; }
+
+  /* SOAP diagram */
+  .soap-layers { display: flex; flex-direction: column; gap: 2px; }
+  .soap-layer {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .soap-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    min-width: 120px;
+    padding-top: 2px;
+  }
+  .soap-content { font-size: 0.88rem; color: var(--text); }
+  .soap-content .sub { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+
+  /* Table general */
+  .data-table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; }
+  .data-table th {
+    background: rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    font-size: 0.88rem;
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* msg type colors */
+  .msg-s { color: var(--accent2); font-weight: 600; }
+  .msg-i { color: var(--accent); font-weight: 600; }
+  .msg-e { color: var(--accent3); font-weight: 600; }
+  .msg-w { color: var(--accent5); font-weight: 600; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-header h1 { font-size: 1.6rem; }
+    .arch-flow { flex-direction: column; align-items: center; }
+    .arch-arrow { transform: rotate(90deg); }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Scroll reveal */
+  .section { animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Footer */
+  .page-footer {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 40px;
+  }
+
+  .separator { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(163,113,247,0.08));
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Accounting CAP Service</h1>
+  <p class="subtitle">เอกสารอธิบายสถาปัตยกรรมและการทำงานของระบบ สำหรับ developer ที่จะ maintain ต่อ</p>
+  <div class="header-tags">
+    <span class="tag">SAP CAP Node.js v10</span>
+    <span class="tag green">@cap-js/postgres</span>
+    <span class="tag orange">BTP Cloud Foundry ap11</span>
+    <span class="tag purple">S/4HANA SOAP</span>
+    <span class="tag red">XSUAA</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <h3>สารบัญ</h3>
+    <ol>
+      <li><a href="#overview">Overview Architecture</a></li>
+      <li><a href="#entities">Database Entities &amp; Relationships</a></li>
+      <li><a href="#import">Action: import — รับข้อมูลจาก HIS</a></li>
+      <li><a href="#postfi">Action: postFI — ส่ง FI Document ไป S/4HANA</a></li>
+      <li><a href="#central-config">Central Config Client — ดึง GL Mapping</a></li>
+      <li><a href="#s4h-journal">S4H Journal Builder — สร้าง SOAP Payload</a></li>
+      <li><a href="#soap-structure">SOAP Structure ที่ส่งไป S/4HANA</a></li>
+      <li><a href="#status">JournalEntry Status &amp; Messages</a></li>
+    </ol>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="overview">
+    <div class="section-title"><span class="num">1</span> Overview Architecture</div>
+
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-box his">
+          <div class="label">Source</div>
+          <div class="name">HIS System</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box cap">
+          <div class="label">CAP Service</div>
+          <div class="name">accounting-srv</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box pg">
+          <div class="label">Database</div>
+          <div class="name">PostgreSQL</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box s4">
+          <div class="label">ERP</div>
+          <div class="name">S/4HANA</div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top: 20px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap;">
+        <div class="arch-box cfg" style="min-width:200px;">
+          <div class="label">Config Service</div>
+          <div class="name">central-config-srv</div>
+        </div>
+      </div>
+      <p style="text-align:center; color:var(--muted); font-size:0.82rem; margin-top:12px;">
+        central-config-srv ให้ข้อมูล GL Mapping tables ผ่าน OData + XSUAA
+      </p>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>HIS System (Hospital Information System)</h4>
+        <p style="color:var(--muted); font-size:0.9rem;">ส่งข้อมูลการรักษา ค่าบริการ และการชำระเงินมาเป็น JSON array ผ่าน action <code>import</code> เพื่อบันทึกลง PostgreSQL</p>
+      </div>
+      <div class="card">
+        <h4>accounting-srv (CAP Node.js)</h4>
+        <p style="color:var(--muted); font-size:0.9rem;">Core service: รับ import, เก็บใน DB, ส่ง SOAP ไป S/4HANA ผ่าน action <code>postFI</code> — deploy บน BTP Cloud Foundry region ap11</p>
+      </div>
+      <div class="card">
+        <h4>PostgreSQL (BTP)</h4>
+        <p style="color:var(--muted); font-size:0.9rem;">เก็บทุก entity: Batches, Items, Payments, JournalEntryPostings, Messages — ใช้ existing service <code>my-cap-postgres-db</code></p>
+      </div>
+      <div class="card">
+        <h4>S/4HANA SOAP</h4>
+        <p style="color:var(--muted); font-size:0.9rem;">รับ FI Document ผ่าน SOAP interface <code>JOURNALENTRYCREATEREQUESTCONFI</code> — เชื่อมต่อผ่าน BTP Destination service</p>
+      </div>
+      <div class="card">
+        <h4>central-config-srv</h4>
+        <p style="color:var(--muted); font-size:0.9rem;">OData service ที่เก็บ GL Mapping tables (5 ตาราง) — accounting-srv ดึงข้อมูลผ่าน XSUAA token binding</p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <strong style="color:var(--accent);">ไฟล์หลักที่ต้องรู้จัก:</strong>
+      <ul style="margin-top: 8px; padding-left: 20px; color: var(--muted); font-size: 0.9rem;">
+        <li><code>db/schema.cds</code> — นิยาม entities ทั้งหมด</li>
+        <li><code>srv/accounting-service.cds</code> — service definition + actions</li>
+        <li><code>srv/accounting-service.js</code> — logic หลัก (processBatch, package loop)</li>
+        <li><code>srv/s4h-journal.cjs</code> — SOAP integration: build + post</li>
+        <li><code>srv/central-config-client.js</code> — fetch GL mapping จาก central-config</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="entities">
+    <div class="section-title"><span class="num">2</span> Database Entities &amp; Relationships</div>
+
+    <div class="info-box blue">
+      <span class="info-icon">ℹ</span>
+      <span>ทุก entity ใช้ <code>cuid</code> เป็น primary key (UUID สร้างอัตโนมัติโดย CAP) — ไม่มี auto-increment integer</span>
+    </div>
+
+    <!-- Relationship diagram text -->
+    <div class="arch-diagram" style="margin-bottom:24px;">
+      <pre style="background:none; border:none; padding:0; color:var(--text); line-height:2;">
+<span style="color:var(--accent5);">Batches</span> (root entity)
+├── items        → <span style="color:var(--accent);">Items</span>             [Composition of many]
+├── payments     → <span style="color:var(--accent2);">Payments</span>          [Composition of many]
+└── journalEntryPostings → <span style="color:var(--accent4);">JournalEntryPostings</span>  [Composition of many]
+                              └── messages → <span style="color:var(--accent3);">JournalEntryMessages</span>  [Composition of many]
+
+<span style="color:var(--accent);">Items</span>.fiPosting → <span style="color:var(--accent4);">JournalEntryPostings</span>  [Association to one]</pre>
+    </div>
+
+    <!-- Batches -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(255,166,87,0.08); border-bottom-color: rgba(255,166,87,0.2);">
+        <div class="entity-name" style="color:var(--accent5);">Batches</div>
+        <span class="entity-badge" style="background:rgba(255,166,87,0.2); color:var(--accent5);">Root Entity</span>
+        <span style="color:var(--muted); font-size:0.85rem; margin-left: auto;">1 batch = 1 ใบเสร็จ/ใบแจ้งหนี้จาก HIS</span>
+      </div>
+      <table class="entity-table">
+        <tr><th>Field</th><th>Type / Enum</th><th>คำอธิบาย</th></tr>
+        <tr><td>ID</td><td>cuid</td><td>Primary key (UUID)</td></tr>
+        <tr><td>hisDocumentType</td><td>String Enum (11 types)</td><td>INVOICE_OPD, RECEIPT_OPD, CREDIT_NOTE, DEBIT_NOTE, INVOICE_IPD, RECEIPT_IPD, INVOICE_CORPORATE, RECEIPT_CORPORATE, DEPOSIT_RECEIVE, DEPOSIT_REFUND, DEPOSIT_USE</td></tr>
+        <tr><td>hospitalCode</td><td>String</td><td>รหัสโรงพยาบาล</td></tr>
+        <tr><td>accountingDocumentNumber</td><td>String</td><td>เลขที่เอกสารบัญชีจาก HIS</td></tr>
+        <tr><td>billDate</td><td>Date</td><td>วันที่ออกบิล (ใช้ใน postFI query)</td></tr>
+        <tr><td>currency</td><td>String(3)</td><td>สกุลเงิน เช่น THB</td></tr>
+        <tr><td>hospitalNumber</td><td>String</td><td>CO-PA field: YY1_HospitalNumber</td></tr>
+        <tr><td>visitNumber</td><td>String</td><td>CO-PA field: YY1_VisitNumber</td></tr>
+        <tr><td>coverageType</td><td>String</td><td>CO-PA field: YY1_CoverageCode</td></tr>
+        <tr><td>patientGroup</td><td>String</td><td>CO-PA field: YY1_PatientGroup</td></tr>
+        <tr><td>marketChannel</td><td>String</td><td>CO-PA field: YY1_MarketChannel</td></tr>
+      </table>
+    </div>
+
+    <!-- Items -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(88,166,255,0.08); border-bottom-color: rgba(88,166,255,0.2);">
+        <div class="entity-name" style="color:var(--accent);">Items</div>
+        <span class="entity-badge" style="background:rgba(88,166,255,0.2); color:var(--accent);">Composition of Batches</span>
+        <span style="color:var(--muted); font-size:0.85rem; margin-left: auto;">รายการค่าบริการแต่ละรายการ</span>
+      </div>
+      <table class="entity-table">
+        <tr><th>Field</th><th>Type</th><th>คำอธิบาย</th></tr>
+        <tr><td>itemCode</td><td>String</td><td>รหัส item จาก HIS</td></tr>
+        <tr><td>itemName</td><td>String</td><td>ชื่อรายการ</td></tr>
+        <tr><td>totalAmount</td><td>Decimal</td><td>ราคาก่อนหัก discount</td></tr>
+        <tr><td>discountAmount</td><td>Decimal</td><td>ส่วนลด (0 ถ้าไม่มี)</td></tr>
+        <tr><td>netAmount</td><td>Decimal</td><td>ราคาสุทธิ = total - discount</td></tr>
+        <tr><td>requestingDepartmentCode</td><td>String</td><td>CO-PA: YY1_RequestDeptCode</td></tr>
+        <tr><td>performingDepartmentCode</td><td>String</td><td>CO-PA: YY1_PerformDeptCode</td></tr>
+        <tr><td>patientType</td><td>String</td><td>CO-PA: YY1_PatientType</td></tr>
+        <tr><td>orderCategory</td><td>String</td><td>CO-PA: YY1_OrderCategory</td></tr>
+        <tr><td>orderSubCategory</td><td>String</td><td>CO-PA: YY1_OrderSubCategory</td></tr>
+        <tr><td>billingGroup</td><td>String</td><td>ใช้ group items ก่อนส่ง SOAP แต่ละ JE</td></tr>
+        <tr><td>fiPosting</td><td>Association → JournalEntryPostings</td><td>FK ไปยัง posting ที่สำเร็จ</td></tr>
+      </table>
+    </div>
+
+    <!-- Payments -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(63,185,80,0.08); border-bottom-color: rgba(63,185,80,0.2);">
+        <div class="entity-name" style="color:var(--accent2);">Payments</div>
+        <span class="entity-badge" style="background:rgba(63,185,80,0.2); color:var(--accent2);">Composition of Batches</span>
+        <span style="color:var(--muted); font-size:0.85rem; margin-left: auto;">การชำระเงินแต่ละช่องทาง</span>
+      </div>
+      <table class="entity-table">
+        <tr><th>Field</th><th>Type / Enum</th><th>คำอธิบาย</th></tr>
+        <tr><td>paymentMethod</td><td>CASH / TRANSFER / EDC / QR / VOUCHER / DEPOSIT</td><td>วิธีชำระเงิน</td></tr>
+        <tr><td>paymentAmount</td><td>Decimal</td><td>จำนวนเงิน</td></tr>
+        <tr><td>bankCode</td><td>String</td><td>รหัสธนาคาร (ถ้ามี)</td></tr>
+        <tr><td>edcTerminalId</td><td>String</td><td>Terminal ID ของ EDC</td></tr>
+      </table>
+    </div>
+
+    <!-- JournalEntryPostings -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(210,168,255,0.08); border-bottom-color: rgba(210,168,255,0.2);">
+        <div class="entity-name" style="color:var(--accent4);">JournalEntryPostings</div>
+        <span class="entity-badge" style="background:rgba(210,168,255,0.2); color:var(--accent4);">Composition of Batches</span>
+        <span style="color:var(--muted); font-size:0.85rem; margin-left: auto;">ผลการ post ไป S/4HANA</span>
+      </div>
+      <table class="entity-table">
+        <tr><th>Field</th><th>Type</th><th>คำอธิบาย</th></tr>
+        <tr><td>JournalEntryDocumentNumber</td><td>String</td><td>เลขที่ JE จาก S/4HANA (เมื่อ POSTED)</td></tr>
+        <tr><td>JournalEntryCompanyCode</td><td>String</td><td>Company Code ของ JE</td></tr>
+        <tr><td>JournalEntryYear</td><td>String</td><td>ปีบัญชีของ JE</td></tr>
+        <tr><td>JournalEntryStatus</td><td>POSTED / ERROR</td><td>สถานะการ post</td></tr>
+        <tr><td>messages</td><td>Composition → JournalEntryMessages</td><td>ข้อความ response จาก SAP</td></tr>
+      </table>
+    </div>
+
+    <!-- JournalEntryMessages -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(247,129,102,0.08); border-bottom-color: rgba(247,129,102,0.2);">
+        <div class="entity-name" style="color:var(--accent3);">JournalEntryMessages</div>
+        <span class="entity-badge" style="background:rgba(247,129,102,0.2); color:var(--accent3);">Composition of JournalEntryPostings</span>
+      </div>
+      <table class="entity-table">
+        <tr><th>Field</th><th>Type / Enum</th><th>คำอธิบาย</th></tr>
+        <tr><td>lineNumber</td><td>Integer</td><td>ลำดับข้อความ</td></tr>
+        <tr><td>message</td><td>String</td><td>ข้อความจาก SAP</td></tr>
+        <tr><td>msgType</td><td>S / I / E / W</td><td><span class="msg-s">S</span>=Success, <span class="msg-i">I</span>=Information, <span class="msg-e">E</span>=Error, <span class="msg-w">W</span>=Warning</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="import">
+    <div class="section-title"><span class="num">3</span> Action: import — รับข้อมูลจาก HIS</div>
+
+    <p style="color:var(--muted); margin-bottom: 20px;">Action นี้รับ array ของ batch objects แล้ว insert ลง PostgreSQL ในครั้งเดียว — เป็น entry point แรกของข้อมูลจาก HIS</p>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h5>HIS ส่ง HTTP POST พร้อม JSON body</h5>
+          <p>เรียก endpoint: <code>POST /accounting/import</code></p>
+          <p>ต้องมี Authorization header: Bearer token ที่ออกโดย XSUAA (accounting-auth)</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h5>CAP validate &amp; insert</h5>
+          <p>CAP framework จัดการ validation ตาม schema.cds โดยอัตโนมัติ แล้ว insert ทั้ง Batches, Items, Payments ใน transaction เดียวกัน</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h5>Response</h5>
+          <p>Return IDs ของ batches ที่ insert สำเร็จ — HIS สามารถเก็บไว้ใช้ track สถานะ</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <p style="color:var(--muted); margin-bottom:10px; font-size:0.9rem;"><strong style="color:var(--text);">JSON Structure ที่รับ:</strong></p>
+      <pre><span class="cmt">// POST /accounting/import</span>
+{
+  <span class="str">"batches"</span>: [
+    {
+      <span class="str">"hisDocumentType"</span>: <span class="str">"RECEIPT_OPD"</span>,
+      <span class="str">"hospitalCode"</span>: <span class="str">"H001"</span>,
+      <span class="str">"accountingDocumentNumber"</span>: <span class="str">"REC2024001"</span>,
+      <span class="str">"billDate"</span>: <span class="str">"2024-01-15"</span>,
+      <span class="str">"currency"</span>: <span class="str">"THB"</span>,
+      <span class="str">"hospitalNumber"</span>: <span class="str">"HN-12345"</span>,
+      <span class="str">"visitNumber"</span>: <span class="str">"VN-67890"</span>,
+      <span class="str">"coverageType"</span>: <span class="str">"CASH"</span>,
+      <span class="str">"patientGroup"</span>: <span class="str">"OPD"</span>,
+      <span class="str">"marketChannel"</span>: <span class="str">"WALK_IN"</span>,
+      <span class="str">"items"</span>: [
+        {
+          <span class="str">"itemCode"</span>: <span class="str">"SVC001"</span>,
+          <span class="str">"itemName"</span>: <span class="str">"ค่าแพทย์"</span>,
+          <span class="str">"totalAmount"</span>: <span class="num">500.00</span>,
+          <span class="str">"discountAmount"</span>: <span class="num">0</span>,
+          <span class="str">"netAmount"</span>: <span class="num">500.00</span>,
+          <span class="str">"billingGroup"</span>: <span class="str">"GRP_A"</span>,
+          <span class="str">"requestingDepartmentCode"</span>: <span class="str">"OPD"</span>,
+          <span class="str">"performingDepartmentCode"</span>: <span class="str">"MED"</span>,
+          <span class="str">"patientType"</span>: <span class="str">"NEW"</span>,
+          <span class="str">"orderCategory"</span>: <span class="str">"CONSULT"</span>,
+          <span class="str">"orderSubCategory"</span>: <span class="str">"GENERAL"</span>
+        }
+      ],
+      <span class="str">"payments"</span>: [
+        {
+          <span class="str">"paymentMethod"</span>: <span class="str">"CASH"</span>,
+          <span class="str">"paymentAmount"</span>: <span class="num">500.00</span>
+        }
+      ]
+    }
+  ]
+}</pre>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="postfi">
+    <div class="section-title"><span class="num">4</span> Action: postFI — ส่ง FI Document ไป S/4HANA</div>
+
+    <div class="card-grid" style="margin-bottom: 24px;">
+      <div class="card">
+        <h4>Mode 1: ส่งทีละ batch</h4>
+        <pre style="font-size:12px; margin-top:8px;"><span class="cmt">// POST /accounting/postFI</span>
+{
+  <span class="str">"batchId"</span>: <span class="str">"uuid-of-batch"</span>
+}</pre>
+      </div>
+      <div class="card">
+        <h4>Mode 2: ส่งทั้ง hisDocumentType + วันที่</h4>
+        <pre style="font-size:12px; margin-top:8px;"><span class="cmt">// POST /accounting/postFI</span>
+{
+  <span class="str">"hisDocumentType"</span>: <span class="str">"RECEIPT_OPD"</span>,
+  <span class="str">"billDate"</span>: <span class="str">"2024-01-15"</span>
+}</pre>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom: 20px; font-size: 0.9rem;"><strong style="color: var(--text);">postFI Flow (Step-by-Step):</strong></p>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h5>รับ Parameters และ Route</h5>
+          <ul>
+            <li>ถ้ามี <code>batchId</code> → ดึง batch นั้นเดียวจาก DB</li>
+            <li>ถ้ามี <code>hisDocumentType + billDate</code> → ดึง Batches ทั้งหมดที่ตรงเงื่อนไข แบบ package loop</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h5>Package-size Loop (สำหรับ Mode 2)</h5>
+          <ul>
+            <li>ดึง Batches ทีละ 100 รายการ (package-size)</li>
+            <li>loop จนหมด เพื่อป้องกัน memory overflow เมื่อมีข้อมูลมาก</li>
+            <li>แต่ละ batch → เรียก <code>processBatch(batch)</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h5>processBatch: เช็ค Skip</h5>
+          <ul>
+            <li>ดู <code>JournalEntryPostings</code> ของ batch นี้</li>
+            <li>ถ้ามี status = POSTED แล้ว → skip ไม่ส่งซ้ำ</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h5>ดึง Items จาก DB</h5>
+          <ul>
+            <li>Query Items ที่ belong to batch นี้</li>
+            <li>รวม fields ที่ต้องใช้: itemCode, netAmount, billingGroup, CO-PA fields ทั้งหมด</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h5>ดึง GL Mapping จาก central-config (Parallel)</h5>
+          <p>เรียก 5 endpoint พร้อมกันด้วย <code>Promise.all</code>:</p>
+          <ul>
+            <li><strong>SAPDocumentTypeMapping</strong> — map hisDocumentType → SAP document type</li>
+            <li><strong>DebitCreditIndicator</strong> — กำหนด H(Debit)/S(Credit) ตาม line type</li>
+            <li><strong>RevenueGLMapping</strong> — map itemCode → revenue GL account</li>
+            <li><strong>CostCenterMapping</strong> — map department code → cost center</li>
+            <li><strong>PaymentMethodGLMapping</strong> — map paymentMethod → GL account</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h5>ดึง Payments จาก DB</h5>
+          <ul>
+            <li>Query Payments ที่ belong to batch นี้</li>
+            <li>ใช้สร้าง payment lines ใน SOAP</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h5>Group Items by billingGroup</h5>
+          <ul>
+            <li>แต่ละ billingGroup → 1 Journal Entry ใน S/4HANA</li>
+            <li>วิธีนี้ทำให้ 1 batch สามารถมีหลาย JE ได้</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">8</div>
+        <div class="step-content">
+          <h5>ส่ง SOAP ต่อ billingGroup</h5>
+          <ul>
+            <li>เรียก <code>postJournalEntry(billingGroup, items, payments, configs, batchData)</code></li>
+            <li>Function นี้อยู่ใน <code>srv/s4h-journal.cjs</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">9</div>
+        <div class="step-content">
+          <h5>บันทึกผลลัพธ์</h5>
+          <ul>
+            <li><strong>สำเร็จ:</strong> insert JournalEntryPostings (status=POSTED, JE Document Number) + Messages</li>
+            <li><strong>ล้มเหลว:</strong> insert JournalEntryPostings (status=ERROR) + Messages (error details)</li>
+            <li>Items.fiPosting ถูก update ให้ชี้ไปยัง JournalEntryPosting ที่สร้าง</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="central-config">
+    <div class="section-title"><span class="num">5</span> Central Config Client — ดึง GL Mapping</div>
+
+    <div class="info-box yellow">
+      <span class="info-icon">⚡</span>
+      <span><strong>ทำไมต้อง XSUAA?</strong> central-config-srv เป็น service แยก — accounting-srv ต้องแสดงตัวตน (authenticate) ก่อนเรียก OData API โดยใช้ token จาก shared XSUAA instance (<code>central-config-auth</code>)</span>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>Token Flow</h4>
+        <ol style="padding-left: 18px; color: var(--muted); font-size: 0.88rem; margin-top: 8px;">
+          <li style="margin: 5px 0;">อ่าน credentials จาก env vars (<code>CENTRAL_CONFIG_CLIENT_ID</code>, <code>CENTRAL_CONFIG_CLIENT_SECRET</code>, <code>CENTRAL_CONFIG_TOKEN_URL</code>)</li>
+          <li style="margin: 5px 0;">POST ไป XSUAA token endpoint: grant_type=client_credentials</li>
+          <li style="margin: 5px 0;">Cache token ไว้ (จนหมดอายุ) เพื่อไม่ต้องขอใหม่ทุกครั้ง</li>
+          <li style="margin: 5px 0;">ใส่ Bearer token ใน Authorization header ของ OData request</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h4>5 Tables ที่ดึง</h4>
+        <ul style="padding-left: 18px; color: var(--muted); font-size: 0.88rem; margin-top: 8px;">
+          <li style="margin: 5px 0;"><code>SAPDocumentTypeMapping</code> — hisDocumentType → SAP Doc Type</li>
+          <li style="margin: 5px 0;"><code>DebitCreditIndicator</code> — กำหนด D/C per line type</li>
+          <li style="margin: 5px 0;"><code>RevenueGLMapping</code> — itemCode → Revenue GL</li>
+          <li style="margin: 5px 0;"><code>CostCenterMapping</code> — dept code → Cost Center</li>
+          <li style="margin: 5px 0;"><code>PaymentMethodGLMapping</code> — paymentMethod → GL</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px;">
+      <p style="color:var(--muted); font-size:0.9rem; margin-bottom:10px;"><strong style="color:var(--text);">Env vars ที่ต้องใช้ (มาจาก VCAP_SERVICES หรือ set เอง):</strong></p>
+      <pre><span class="cmt"># ต้องมีใน environment ก่อนรัน</span>
+CENTRAL_CONFIG_CLIENT_ID=sb-central-config-...
+CENTRAL_CONFIG_CLIENT_SECRET=...secret...
+CENTRAL_CONFIG_TOKEN_URL=https://....authentication.ap11.hana.ondemand.com/oauth/token
+CENTRAL_CONFIG_URL=https://central-config-srv.cfapps.ap11.hana.ondemand.com</pre>
+    </div>
+
+    <div class="info-box red" style="margin-top: 12px;">
+      <span class="info-icon">✗</span>
+      <span><strong>ข้อผิดพลาดบ่อย:</strong> <code>central-config credentials not found</code> — เกิดเมื่อ env vars ไม่ได้ถูก set ในเทอร์มินัลเดียวกับที่รัน <code>cds serve</code></span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="s4h-journal">
+    <div class="section-title"><span class="num">6</span> S4H Journal Builder (s4h-journal.cjs)</div>
+
+    <p style="color:var(--muted); margin-bottom: 20px; font-size: 0.9rem;">ไฟล์นี้รับผิดชอบสร้าง SOAP payload และส่งไป S/4HANA — ใช้ <code>.cjs</code> เพราะ mixed module environment</p>
+
+    <!-- buildItemLines -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(88,166,255,0.08); border-bottom-color: rgba(88,166,255,0.2);">
+        <div class="entity-name" style="color:var(--accent); font-family: monospace; font-size: 1rem;">buildItemLines(hisDocumentType, options)</div>
+      </div>
+      <div style="padding: 16px 20px;">
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">สร้าง Journal Entry line items สำหรับรายการค่าบริการ</p>
+        <table class="data-table">
+          <tr><th>Line Type</th><th>GL Account</th><th>D/C</th><th>เงื่อนไข</th></tr>
+          <tr><td>Revenue</td><td>จาก RevenueGLMapping (itemCode)</td><td>Credit</td><td>ทุก document type</td></tr>
+          <tr><td>Discount</td><td>GL บัญชีส่วนลด</td><td>Debit</td><td>ไม่มีใน CREDIT_NOTE / DEBIT_NOTE</td></tr>
+          <tr><td>Cost Center</td><td>จาก CostCenterMapping</td><td>Debit</td><td>ถ้ามี cost center mapping</td></tr>
+          <tr><td>Reconcile</td><td>GL reconciliation</td><td>Debit/Credit</td><td>balance entry</td></tr>
+        </table>
+        <div class="info-box blue" style="margin-top: 12px; font-size: 0.85rem;">
+          <span class="info-icon">ℹ</span>
+          <span>CO-PA fields ถูก attach ไปทุก line: YY1_HospitalNumber, YY1_VisitNumber, YY1_CoverageCode, YY1_PatientGroup, YY1_MarketChannel, YY1_PatientType, YY1_OrderCategory, YY1_OrderSubCategory, YY1_RequestDeptCode, YY1_PerformDeptCode</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- buildPaymentLines -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(63,185,80,0.08); border-bottom-color: rgba(63,185,80,0.2);">
+        <div class="entity-name" style="color:var(--accent2); font-family: monospace; font-size: 1rem;">buildPaymentLines(options)</div>
+      </div>
+      <div style="padding: 16px 20px;">
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">สร้าง payment line items จาก Payments array</p>
+        <ul style="padding-left: 18px; color: var(--muted); font-size: 0.9rem;">
+          <li>Map paymentMethod → GL account จาก PaymentMethodGLMapping</li>
+          <li>แต่ละ payment record = 1 line ใน JE</li>
+          <li>รองรับ: CASH, TRANSFER, EDC, QR, VOUCHER, DEPOSIT</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- buildRequestBody -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(255,166,87,0.08); border-bottom-color: rgba(255,166,87,0.2);">
+        <div class="entity-name" style="color:var(--accent5); font-family: monospace; font-size: 1rem;">buildRequestBody(options)</div>
+      </div>
+      <div style="padding: 16px 20px;">
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">ประกอบ SOAP XML JournalEntryCreateRequest ทั้งหมด</p>
+        <ul style="padding-left: 18px; color: var(--muted); font-size: 0.9rem;">
+          <li>รวม item lines + payment lines</li>
+          <li>ใส่ header: CompanyCode, DocumentDate, PostingDate, Currency, SAP DocumentType</li>
+          <li>ใส่ <code>ProductTaxItem</code>: TaxCode=O0, TaxItemClassification=MWS (สำคัญ! ขาดไปจะ error)</li>
+          <li>Wrap ด้วย SOAP envelope ที่ถูกต้อง</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- postJournalEntry -->
+    <div class="entity-card">
+      <div class="entity-header" style="background: rgba(210,168,255,0.08); border-bottom-color: rgba(210,168,255,0.2);">
+        <div class="entity-name" style="color:var(--accent4); font-family: monospace; font-size: 1rem;">postJournalEntry(billingGroup, items, payments, configs, batchData)</div>
+      </div>
+      <div style="padding: 16px 20px;">
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:12px;">Orchestrate ทั้งหมด: สร้าง payload → ส่ง SOAP → parse response</p>
+        <ol style="padding-left: 18px; color: var(--muted); font-size: 0.9rem;">
+          <li style="margin: 5px 0;">เรียก buildItemLines + buildPaymentLines</li>
+          <li style="margin: 5px 0;">เรียก buildRequestBody</li>
+          <li style="margin: 5px 0;">ส่ง HTTP POST ไป S/4HANA ผ่าน Destination service URL</li>
+          <li style="margin: 5px 0;">Parse SOAP XML response</li>
+          <li style="margin: 5px 0;">Return: { status, journalEntryDocNumber, companyCode, year, messages[] }</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="soap-structure">
+    <div class="section-title"><span class="num">7</span> SOAP Structure ที่ส่งไป S/4HANA</div>
+
+    <p style="color:var(--muted); margin-bottom: 20px; font-size:0.9rem;">Interface: <code>JOURNALENTRYCREATEREQUESTCONFI</code> — ตัวอย่าง structure ของ SOAP body</p>
+
+    <pre><span class="cmt">&lt;!-- SOAP Envelope --&gt;</span>
+<span class="kw">&lt;soapenv:Envelope</span> xmlns:soapenv=<span class="str">"http://schemas.xmlsoap.org/soap/envelope/"</span>
+                  xmlns:glob=<span class="str">"http://sap.com/xi/SAPGlobal20/Global"</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;soapenv:Body&gt;</span>
+    <span class="kw">&lt;glob:JournalEntryCreateRequest&gt;</span>
+      <span class="kw">&lt;MessageHeader&gt;</span>
+        <span class="kw">&lt;ID&gt;</span>uuid-v4<span class="kw">&lt;/ID&gt;</span>
+        <span class="kw">&lt;CreationDateTime&gt;</span>2024-01-15T10:30:00Z<span class="kw">&lt;/CreationDateTime&gt;</span>
+      <span class="kw">&lt;/MessageHeader&gt;</span>
+
+      <span class="kw">&lt;JournalEntry&gt;</span>
+        <span class="cmt">&lt;!-- Header --&gt;</span>
+        <span class="kw">&lt;CompanyCode&gt;</span>1000<span class="kw">&lt;/CompanyCode&gt;</span>
+        <span class="kw">&lt;DocumentDate&gt;</span>2024-01-15<span class="kw">&lt;/DocumentDate&gt;</span>
+        <span class="kw">&lt;PostingDate&gt;</span>2024-01-15<span class="kw">&lt;/PostingDate&gt;</span>
+        <span class="kw">&lt;DocumentCurrency&gt;</span>THB<span class="kw">&lt;/DocumentCurrency&gt;</span>
+        <span class="kw">&lt;AccountingDocumentType&gt;</span>DR<span class="kw">&lt;/AccountingDocumentType&gt;</span>
+
+        <span class="cmt">&lt;!-- Item Lines (Revenue + Discount + Payment) --&gt;</span>
+        <span class="kw">&lt;Item&gt;</span>
+          <span class="kw">&lt;GLAccount&gt;</span>4001001<span class="kw">&lt;/GLAccount&gt;</span>
+          <span class="kw">&lt;DebitCreditCode&gt;</span>S<span class="kw">&lt;/DebitCreditCode&gt;</span> <span class="cmt">&lt;!-- S=Credit --&gt;</span>
+          <span class="kw">&lt;TransactionCurrencyAmount&gt;</span>500.00<span class="kw">&lt;/TransactionCurrencyAmount&gt;</span>
+          <span class="kw">&lt;TaxCode&gt;</span>O0<span class="kw">&lt;/TaxCode&gt;</span>
+          <span class="cmt">&lt;!-- CO-PA Extension Fields --&gt;</span>
+          <span class="kw">&lt;YY1_HospitalNumber&gt;</span>HN-12345<span class="kw">&lt;/YY1_HospitalNumber&gt;</span>
+          <span class="kw">&lt;YY1_VisitNumber&gt;</span>VN-67890<span class="kw">&lt;/YY1_VisitNumber&gt;</span>
+          <span class="kw">&lt;YY1_CoverageCode&gt;</span>CASH<span class="kw">&lt;/YY1_CoverageCode&gt;</span>
+          <span class="kw">&lt;YY1_PatientGroup&gt;</span>OPD<span class="kw">&lt;/YY1_PatientGroup&gt;</span>
+          <span class="kw">&lt;YY1_MarketChannel&gt;</span>WALK_IN<span class="kw">&lt;/YY1_MarketChannel&gt;</span>
+          <span class="kw">&lt;YY1_PatientType&gt;</span>NEW<span class="kw">&lt;/YY1_PatientType&gt;</span>
+          <span class="kw">&lt;YY1_OrderCategory&gt;</span>CONSULT<span class="kw">&lt;/YY1_OrderCategory&gt;</span>
+          <span class="kw">&lt;YY1_OrderSubCategory&gt;</span>GENERAL<span class="kw">&lt;/YY1_OrderSubCategory&gt;</span>
+          <span class="kw">&lt;YY1_RequestDeptCode&gt;</span>OPD<span class="kw">&lt;/YY1_RequestDeptCode&gt;</span>
+          <span class="kw">&lt;YY1_PerformDeptCode&gt;</span>MED<span class="kw">&lt;/YY1_PerformDeptCode&gt;</span>
+        <span class="kw">&lt;/Item&gt;</span>
+
+        <span class="cmt">&lt;!-- ProductTaxItem (สำคัญมาก! ขาดไม่ได้) --&gt;</span>
+        <span class="kw">&lt;ProductTaxItem&gt;</span>
+          <span class="kw">&lt;TaxCode&gt;</span>O0<span class="kw">&lt;/TaxCode&gt;</span>
+          <span class="kw">&lt;TaxItemClassification&gt;</span>MWS<span class="kw">&lt;/TaxItemClassification&gt;</span>
+          <span class="kw">&lt;TransactionCurrencyTaxAmount&gt;</span>0<span class="kw">&lt;/TransactionCurrencyTaxAmount&gt;</span>
+        <span class="kw">&lt;/ProductTaxItem&gt;</span>
+
+      <span class="kw">&lt;/JournalEntry&gt;</span>
+    <span class="kw">&lt;/glob:JournalEntryCreateRequest&gt;</span>
+  <span class="kw">&lt;/soapenv:Body&gt;</span>
+<span class="kw">&lt;/soapenv:Envelope&gt;</span></pre>
+
+    <div class="info-box red" style="margin-top: 16px;">
+      <span class="info-icon">✗</span>
+      <span><strong>ข้อผิดพลาดที่พบบ่อย:</strong> <code>Tax statement item missing for tax code O0</code> — เกิดเมื่อ <code>ProductTaxItem</code> ไม่ได้ถูกส่ง หรือ <code>TaxItemClassification</code> ไม่ใช่ MWS</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="status">
+    <div class="section-title"><span class="num">8</span> JournalEntry Status &amp; Messages</div>
+
+    <div class="card-grid">
+      <div class="card" style="border-color: rgba(63,185,80,0.3);">
+        <h4 style="color:var(--accent2);">POSTED — สำเร็จ</h4>
+        <ul style="padding-left: 18px; color: var(--muted); font-size: 0.9rem; margin-top: 8px;">
+          <li>S/4HANA ออก JE Document Number</li>
+          <li>บันทึก JournalEntryDocumentNumber, CompanyCode, Year</li>
+          <li>Items.fiPosting ชี้ไปยัง JournalEntryPosting นี้</li>
+          <li>Messages ประกอบด้วย msgType=S และ/หรือ I</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color: rgba(247,129,102,0.3);">
+        <h4 style="color:var(--accent3);">ERROR — ล้มเหลว</h4>
+        <ul style="padding-left: 18px; color: var(--muted); font-size: 0.9rem; margin-top: 8px;">
+          <li>S/4HANA reject หรือ SOAP call ล้มเหลว</li>
+          <li>JournalEntryDocumentNumber = null</li>
+          <li>Messages มี msgType=E พร้อมรายละเอียด</li>
+          <li>Batch ยังสามารถ retry ได้ (เพราะ skip check ดูแค่ POSTED)</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); font-size:0.9rem; margin-top: 20px; margin-bottom: 12px;"><strong style="color:var(--text);">ประเภท Message (msgType):</strong></p>
+    <div class="card" style="overflow-x: auto;">
+      <table class="data-table">
+        <tr>
+          <th>msgType</th>
+          <th>ความหมาย</th>
+          <th>ตัวอย่าง Message</th>
+          <th>Action ที่ควรทำ</th>
+        </tr>
+        <tr>
+          <td><span class="msg-s">S</span></td>
+          <td>Success</td>
+          <td>Document 1234567890 created in company code 1000</td>
+          <td>ไม่ต้องทำอะไร — สำเร็จ</td>
+        </tr>
+        <tr>
+          <td><span class="msg-i">I</span></td>
+          <td>Information</td>
+          <td>Balances updated for cost center CC001</td>
+          <td>รับทราบเฉยๆ — ปกติ</td>
+        </tr>
+        <tr>
+          <td><span class="msg-e">E</span></td>
+          <td>Error</td>
+          <td>Tax statement item missing for tax code O0</td>
+          <td>ต้องแก้ payload แล้ว retry</td>
+        </tr>
+        <tr>
+          <td><span class="msg-w">W</span></td>
+          <td>Warning</td>
+          <td>Exchange rate for date not found, using standard rate</td>
+          <td>ตรวจสอบ แต่อาจไม่กระทบ</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="info-box green" style="margin-top: 16px;">
+      <span class="info-icon">✓</span>
+      <span><strong>Retry Logic:</strong> batch ที่ status=ERROR สามารถ call <code>postFI</code> ซ้ำได้เลย — เพราะ skip check เช็คเฉพาะ POSTED เท่านั้น batch ERROR จะถูก process ใหม่</span>
+    </div>
+
+    <div class="info-box yellow" style="margin-top: 8px;">
+      <span class="info-icon">⚡</span>
+      <span><strong>Known Error: KSCHL is empty</strong> — เกิดจาก SAP ยังไม่ได้ config ConditionType สำหรับ tax code O0 — ต้องให้ SAP Basis admin เข้าไปตั้งค่าใน customizing table ไม่ใช่ปัญหาของ code</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  Accounting CAP Service — Flow &amp; Architecture Documentation &nbsp;|&nbsp; Stack: SAP CAP v10 / PostgreSQL / BTP ap11 / S/4HANA SOAP
+</div>
+
+</body>
+</html>
