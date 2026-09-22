@@ -1,0 +1,33 @@
+{
+  "dependencies": {
+    "@sap/cds": "10.1.0",
+    "@cap-js/postgres": "3.1.0"
+  },
+  "scripts": {
+    "start": "cds-deploy"
+  },
+  "cds": {
+    "features": {
+      "assert_integrity": false
+    },
+    "requires": {
+      "db": {
+        "impl": "@cap-js/postgres",
+        "kind": "postgres",
+        "dialect": "postgres",
+        "vcap": {
+          "label": "postgresql-db",
+          "name": "accounting-db"
+        },
+        "pool": {
+          "min": 0,
+          "max": 10,
+          "testOnBorrow": true,
+          "acquireTimeoutMillis": 1000,
+          "destroyTimeoutMillis": 1000
+        },
+        "schema_evolution": "auto"
+      }
+    }
+  }
+}

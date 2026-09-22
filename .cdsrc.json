@@ -1,0 +1,15 @@
+{
+  "requires": {
+    "db": {
+      "kind": "postgres",
+      "impl": "@cap-js/postgres"
+    }
+  },
+  "[production]": {
+    "requires": {
+      "db": {
+        "vcap": { "name": "accounting-db" }
+      }
+    }
+  }
+}

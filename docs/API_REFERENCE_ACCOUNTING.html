@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Reference — Hospital Accounting Service</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface2: #f8f9fb;
+  --border: #e2e5ea;
+  --text: #1a1d23;
+  --muted: #6b7280;
+  --get: #0369a1; --get-bg: #e0f2fe; --get-border: #bae6fd;
+  --post: #15803d; --post-bg: #dcfce7; --post-border: #bbf7d0;
+  --nav: #1e2761;
+  --accent: #2563eb;
+  --code-bg: #1e293b;
+  --radius: 8px;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+/* Layout */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 260px; background: var(--nav); color: white; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { flex: 1; padding: 2rem 2.5rem; max-width: 900px; }
+
+/* Sidebar */
+.sidebar-header { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-header h1 { font-size: 14px; font-weight: 600; line-height: 1.4; opacity: 0.95; }
+.sidebar-header .sub { font-size: 11px; opacity: 0.55; margin-top: 3px; }
+.sidebar-section { padding: 0.75rem 0 0.25rem; }
+.sidebar-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; padding: 0 1.25rem 0.4rem; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 1.25rem; font-size: 13px; cursor: pointer; opacity: 0.75; transition: opacity 0.15s, background 0.15s; border: none; background: none; color: white; width: 100%; text-align: left; text-decoration: none; }
+.nav-item:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+.nav-item.active { opacity: 1; background: rgba(255,255,255,0.12); }
+.method-pill-sm { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; flex-shrink: 0; }
+.pill-get { background: var(--get-bg); color: var(--get); }
+.pill-post { background: var(--post-bg); color: var(--post); }
+
+/* Base URL box */
+.base-url-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1.1rem; margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 12px; }
+.base-url-box .lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+.base-url-box code { font-family: 'Consolas','Courier New',monospace; font-size: 12px; color: var(--accent); word-break: break-all; }
+
+/* Section headings */
+.section { margin-bottom: 3rem; }
+.section-title { font-size: 20px; font-weight: 600; margin-bottom: 0.25rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border); }
+.section-desc { color: var(--muted); font-size: 13px; margin-bottom: 1.5rem; }
+
+/* Endpoint card */
+.endpoint-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1.25rem; overflow: hidden; }
+.endpoint-header { display: flex; align-items: flex-start; gap: 12px; padding: 1rem 1.25rem; cursor: pointer; user-select: none; }
+.endpoint-header:hover { background: var(--surface2); }
+.method-pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; letter-spacing: 0.03em; }
+.method-get { background: var(--get-bg); color: var(--get); border: 1px solid var(--get-border); }
+.method-post { background: var(--post-bg); color: var(--post); border: 1px solid var(--post-border); }
+.endpoint-info { flex: 1; }
+.endpoint-path { font-family: 'Consolas','Courier New',monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+.endpoint-path .param { color: #9333ea; }
+.endpoint-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.chevron { color: var(--muted); font-size: 16px; transition: transform 0.2s; margin-top: 2px; flex-shrink: 0; }
+.chevron.open { transform: rotate(90deg); }
+
+.endpoint-body { border-top: 1px solid var(--border); display: none; }
+.endpoint-body.open { display: block; }
+
+.body-section { padding: 1rem 1.25rem; }
+.body-section + .body-section { border-top: 1px solid var(--border); }
+.body-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.6rem; }
+
+/* Code block */
+.code-wrap { position: relative; }
+.code-block { background: var(--code-bg); border-radius: 6px; padding: 1rem 1.1rem; font-family: 'Consolas','Courier New',monospace; font-size: 12px; line-height: 1.75; overflow-x: auto; color: #e2e8f0; white-space: pre; }
+.copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: #94a3b8; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+.copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+.copy-btn.copied { background: #166534; color: #86efac; }
+
+/* Inline URL code */
+.url-line { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 1rem; font-family: 'Consolas','Courier New',monospace; font-size: 12.5px; color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem; }
+.url-line .method-tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+.url-code { word-break: break-all; }
+
+/* OData params table */
+.param-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.param-table th { text-align: left; padding: 6px 10px; background: var(--surface2); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+.param-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.param-table tr:last-child td { border-bottom: none; }
+.param-table code { background: #f1f5f9; color: #0f172a; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas','Courier New',monospace; font-size: 11.5px; }
+.req-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+.req-y { background: #fef3c7; color: #92400e; }
+.req-n { background: #f1f5f9; color: #64748b; }
+
+/* Enum chips */
+.enum-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.enum-chip { background: #f1f5f9; border: 1px solid var(--border); border-radius: 4px; font-family: 'Consolas','Courier New',monospace; font-size: 11px; padding: 2px 7px; color: #1e293b; }
+
+/* Response badge */
+.response-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+.response-row:last-child { border-bottom: none; }
+.status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; min-width: 36px; text-align: center; }
+.s200 { background: #dcfce7; color: #166534; }
+.s400 { background: #fef3c7; color: #92400e; }
+.s404 { background: #fee2e2; color: #991b1b; }
+.s500 { background: #fee2e2; color: #991b1b; }
+
+/* Colors in code */
+.ck { color: #7dd3fc; }   /* key */
+.cv { color: #86efac; }   /* value string */
+.cn { color: #fbbf24; }   /* number */
+.cc { color: #64748b; font-style: italic; }   /* comment */
+.cq { color: #c084fc; }   /* query param */
+.ce { color: #f87171; }   /* required */
+
+/* Highlight required */
+.required-note { font-size: 11.5px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 5px; padding: 6px 10px; margin-top: 8px; }
+
+/* Anchor */
+.section-anchor { scroll-margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="h1">Hospital Accounting Service</div>
+    <div class="sub">OData v4 API Reference</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Write</div>
+    <a class="nav-item" href="#import"><span class="method-pill-sm pill-post">POST</span> import batch</a>
+    <a class="nav-item" href="FIPOST_DOCUMENT.html" target="_blank" style="opacity:0.6;font-style:italic;">↗ postFI (แยกไฟล์)</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Read — Batch</div>
+    <a class="nav-item" href="#get-batches"><span class="method-pill-sm pill-get">GET</span> Batches (list)</a>
+    <a class="nav-item" href="#get-batch-single"><span class="method-pill-sm pill-get">GET</span> Batch (single)</a>
+    <a class="nav-item" href="#get-batch-items"><span class="method-pill-sm pill-get">GET</span> Batch + Items</a>
+    <a class="nav-item" href="#get-batch-payments"><span class="method-pill-sm pill-get">GET</span> Batch + Payments</a>
+    <a class="nav-item" href="#get-batch-full"><span class="method-pill-sm pill-get">GET</span> Batch Full (all relations)</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Read — Items</div>
+    <a class="nav-item" href="#get-items"><span class="method-pill-sm pill-get">GET</span> Items (list)</a>
+    <a class="nav-item" href="#get-items-filter"><span class="method-pill-sm pill-get">GET</span> Items by Batch</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Read — FI Postings</div>
+    <a class="nav-item" href="#get-postings"><span class="method-pill-sm pill-get">GET</span> JournalEntryPostings</a>
+    <a class="nav-item" href="#get-postings-msg"><span class="method-pill-sm pill-get">GET</span> Postings + Messages</a>
+    <a class="nav-item" href="#get-postings-filter"><span class="method-pill-sm pill-get">GET</span> Postings by Batch</a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Enums &amp; Reference</div>
+    <a class="nav-item" href="#enums">Enum values</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div class="base-url-box">
+    <div style="flex:1">
+      <div class="lbl">Base URL</div>
+      <code>https://it-one-co--ltd-mid-market-demo-demo-accounting-srv.cfapps.ap11.hana.ondemand.com/odata/v4/accounting</code>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!--  IMPORT                                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section section-anchor" id="import">
+    <div class="section-title">Import Batch</div>
+    <div class="section-desc">นำเข้าข้อมูล Batch พร้อม Items และ Payments — ครั้งละหลาย batch ได้</div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-post">POST</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/import</div>
+          <div class="endpoint-desc">นำเข้า batch ใหม่ พร้อม line items และ payment</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+
+        <div class="body-section">
+          <div class="body-title">Headers</div>
+          <div class="code-wrap">
+            <pre class="code-block"><span class="ck">Content-Type</span>: <span class="cv">application/json</span>
+<span class="ck">Authorization</span>: <span class="cv">Bearer &lt;token&gt;</span></pre>
+          </div>
+        </div>
+
+        <div class="body-section">
+          <div class="body-title">Request Body — Full Payload</div>
+          <div class="code-wrap">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre class="code-block">{
+  <span class="ck">"batches"</span>: [
+    {
+      <span class="cc">/* ── Batch fields ─────────────────────── */</span>
+      <span class="ck">"hisDocumentType"</span>:                   <span class="cv">"RECEIPT_OPD"</span>,          <span class="ce">/* required */</span>
+      <span class="ck">"hospitalCode"</span>:                      <span class="cv">"11AA"</span>,                 <span class="ce">/* required */</span>
+      <span class="ck">"accountingDocumentNumber"</span>:          <span class="cv">"DOC-2026-001234"</span>,      <span class="ce">/* required */</span>
+      <span class="ck">"billDate"</span>:                         <span class="cv">"2026-09-15"</span>,           <span class="ce">/* required, YYYY-MM-DD */</span>
+      <span class="ck">"cashierUsername"</span>:                  <span class="cv">"cashier01"</span>,            <span class="ce">/* required */</span>
+      <span class="ck">"currency"</span>:                         <span class="cv">"THB"</span>,                  <span class="ce">/* required, 3 chars */</span>
+      <span class="ck">"hospitalNumber"</span>:                   <span class="cv">"HN-0012345"</span>,           <span class="ce">/* required */</span>
+      <span class="ck">"visitNumber"</span>:                      <span class="cv">"VN-2026-09-001"</span>,       <span class="cc">/* optional */</span>
+      <span class="ck">"payorCode"</span>:                        <span class="cv">"SELF"</span>,                 <span class="cc">/* optional */</span>
+      <span class="ck">"oneTimePayorName1"</span>:               <span class="cv">"นายสมชาย ใจดี"</span>,        <span class="cc">/* optional */</span>
+      <span class="ck">"oneTimePayorName2"</span>:               <span class="cn">null</span>,                   <span class="cc">/* optional */</span>
+      <span class="ck">"coverageType"</span>:                     <span class="cv">"OPD"</span>,                  <span class="cc">/* optional */</span>
+      <span class="ck">"patientGroup"</span>:                     <span class="cv">"GENERAL"</span>,              <span class="cc">/* optional */</span>
+      <span class="ck">"marketChannel"</span>:                    <span class="cv">"WALK_IN"</span>,              <span class="cc">/* optional */</span>
+      <span class="ck">"referenceAccountingDocumentNumber"</span>: <span class="cn">null</span>,                  <span class="cc">/* optional */</span>
+      <span class="ck">"discountHeaderAmount"</span>:             <span class="cn">0.00</span>,                   <span class="cc">/* optional */</span>
+
+      <span class="cc">/* ── Items ────────────────────────────── */</span>
+      <span class="ck">"items"</span>: [
+        {
+          <span class="ck">"itemNumber"</span>:               <span class="cn">1</span>,                      <span class="ce">/* required */</span>
+          <span class="ck">"itemCode"</span>:                 <span class="cv">"SVC-CONSULT-001"</span>,      <span class="ce">/* required */</span>
+          <span class="ck">"itemName"</span>:                 <span class="cv">"ค่าบริการตรวจแพทย์ทั่วไป"</span>,<span class="ce">/* required */</span>
+          <span class="ck">"packageCode"</span>:              <span class="cn">null</span>,                   <span class="cc">/* optional */</span>
+          <span class="ck">"totalAmount"</span>:              <span class="cn">500.00</span>,                 <span class="ce">/* required */</span>
+          <span class="ck">"discountAmount"</span>:           <span class="cn">0.00</span>,                   <span class="cc">/* optional */</span>
+          <span class="ck">"netAmount"</span>:                <span class="cn">500.00</span>,                 <span class="ce">/* required */</span>
+          <span class="ck">"taxAmount"</span>:                <span class="cn">0.00</span>,                   <span class="cc">/* optional */</span>
+          <span class="ck">"taxCode"</span>:                  <span class="cn">null</span>,                   <span class="cc">/* optional */</span>
+          <span class="ck">"requestingDepartmentCode"</span>: <span class="cv">"OPD-GEN"</span>,              <span class="cc">/* optional */</span>
+          <span class="ck">"performingDepartmentCode"</span>: <span class="cv">"OPD-GEN"</span>,              <span class="cc">/* optional */</span>
+          <span class="ck">"doctorCode"</span>:               <span class="cv">"DR-001"</span>,               <span class="cc">/* optional */</span>
+          <span class="ck">"doctorName"</span>:               <span class="cv">"นพ.วิชัย รักษาดี"</span>,     <span class="cc">/* optional */</span>
+          <span class="ck">"quantity"</span>:                 <span class="cn">1.000</span>,                  <span class="ce">/* required */</span>
+          <span class="ck">"unitOfMeasure"</span>:            <span class="cv">"EA"</span>,                   <span class="cc">/* optional */</span>
+          <span class="ck">"patientType"</span>:              <span class="cv">"OPD"</span>,                  <span class="cc">/* optional */</span>
+          <span class="ck">"orderCategory"</span>:            <span class="cv">"SERVICE"</span>,              <span class="cc">/* optional */</span>
+          <span class="ck">"orderSubCategory"</span>:         <span class="cv">"CONSULTATION"</span>,        <span class="cc">/* optional */</span>
+          <span class="ck">"billingGroup"</span>:             <span class="cv">"DEFAULT"</span>,              <span class="cc">/* optional, ใช้ group FI posting */</span>
+          <span class="ck">"billingSubGroup"</span>:          <span class="cn">null</span>                    <span class="cc">/* optional */</span>
+        },
+        {
+          <span class="ck">"itemNumber"</span>:               <span class="cn">2</span>,
+          <span class="ck">"itemCode"</span>:                 <span class="cv">"MED-PARACETAMOL-500"</span>,
+          <span class="ck">"itemName"</span>:                 <span class="cv">"Paracetamol 500mg"</span>,
+          <span class="ck">"totalAmount"</span>:              <span class="cn">120.00</span>,
+          <span class="ck">"discountAmount"</span>:           <span class="cn">20.00</span>,
+          <span class="ck">"netAmount"</span>:                <span class="cn">100.00</span>,
+          <span class="ck">"quantity"</span>:                 <span class="cn">10.000</span>,
+          <span class="ck">"unitOfMeasure"</span>:            <span class="cv">"TAB"</span>,
+          <span class="ck">"orderCategory"</span>:            <span class="cv">"DRUG"</span>,
+          <span class="ck">"billingGroup"</span>:             <span class="cv">"DEFAULT"</span>
+        }
+      ],
+
+      <span class="cc">/* ── Payments ─────────────────────────── */</span>
+      <span class="ck">"payments"</span>: [
+        {
+          <span class="ck">"paymentRunningNumber"</span>:   <span class="cn">1</span>,             <span class="ce">/* required */</span>
+          <span class="ck">"paymentMethod"</span>:         <span class="cv">"CASH"</span>,        <span class="ce">/* required */</span>
+          <span class="ck">"paymentAmount"</span>:         <span class="cn">400.00</span>,        <span class="ce">/* required */</span>
+          <span class="ck">"voucherCode"</span>:           <span class="cn">null</span>,
+          <span class="ck">"paymentReferenceNumber"</span>: <span class="cn">null</span>,
+          <span class="ck">"bankTransactionNumber"</span>:  <span class="cn">null</span>,
+          <span class="ck">"bankCode"</span>:              <span class="cn">null</span>,
+          <span class="ck">"edcTerminalId"</span>:         <span class="cn">null</span>,
+          <span class="ck">"edcApprovalCode"</span>:       <span class="cn">null</span>
+        },
+        {
+          <span class="ck">"paymentRunningNumber"</span>:   <span class="cn">2</span>,
+          <span class="ck">"paymentMethod"</span>:         <span class="cv">"QR"</span>,
+          <span class="ck">"paymentAmount"</span>:         <span class="cn">200.00</span>,
+          <span class="ck">"paymentReferenceNumber"</span>: <span class="cv">"QR-REF-20260915-001"</span>,
+          <span class="ck">"bankTransactionNumber"</span>:  <span class="cv">"TXN-KBANK-12345"</span>,
+          <span class="ck">"bankCode"</span>:              <span class="cv">"KBANK"</span>
+        }
+      ]
+    }
+  ]
+}</pre>
+          </div>
+          <div class="required-note">⚠ Field ที่มี <code>/* required */</code> ต้องส่งทุกครั้ง — ถ้าขาดจะได้ error 400</div>
+        </div>
+
+        <div class="body-section">
+          <div class="body-title">Response</div>
+          <div class="response-row"><span class="status-badge s200">200</span> <code>"Imported 1 batch(es) successfully"</code></div>
+          <div class="response-row"><span class="status-badge s400">400</span> batches array ว่าง หรือ field required ขาด</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!--  GET BATCHES                               -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section section-anchor" id="get-batches">
+    <div class="section-title">GET Batches</div>
+    <div class="section-desc">ดึงข้อมูล Batch ระดับต่างๆ — ตั้งแต่ list ธรรมดาจนถึง full relation</div>
+
+    <!-- List -->
+    <div class="endpoint-card" id="get-batches-list">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Batches</div>
+          <div class="endpoint-desc">ดึง batch ทั้งหมด (ไม่มี nested data)</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches</span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$top=20&$orderby=billDate desc</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$filter=hisDocumentType eq 'RECEIPT_OPD' and billDate eq 2026-09-15</span></span></div>
+        </div>
+        <div class="body-section">
+          <div class="body-title">OData Query Options ที่ใช้บ่อย</div>
+          <table class="param-table">
+            <tr><th>Parameter</th><th>ตัวอย่าง</th><th>คำอธิบาย</th></tr>
+            <tr><td><code>$top</code></td><td><code>$top=10</code></td><td>จำกัดจำนวน record</td></tr>
+            <tr><td><code>$skip</code></td><td><code>$skip=20</code></td><td>ข้าม N records (pagination)</td></tr>
+            <tr><td><code>$orderby</code></td><td><code>$orderby=billDate desc</code></td><td>เรียงลำดับ</td></tr>
+            <tr><td><code>$filter</code></td><td><code>$filter=currency eq 'THB'</code></td><td>กรองข้อมูล</td></tr>
+            <tr><td><code>$select</code></td><td><code>$select=ID,billDate,currency</code></td><td>เลือกเฉพาะบาง field</td></tr>
+            <tr><td><code>$count=true</code></td><td><code>$count=true</code></td><td>นับจำนวนทั้งหมด</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single -->
+    <div class="endpoint-card section-anchor" id="get-batch-single">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Batches(<span class="param">guid'&lt;ID&gt;'</span>)</div>
+          <div class="endpoint-desc">ดึง batch เดียวตาม ID</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches(guid'8dc208b4-a592-442d-8cdc-5d791acb88b9')</span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$filter=ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch + Items -->
+    <div class="endpoint-card section-anchor" id="get-batch-items">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Batches<span class="param">?$expand=items</span></div>
+          <div class="endpoint-desc">Batch พร้อม line items ทั้งหมด</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$expand=items</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches(guid'...')<span class="cq">?$expand=items</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$expand=items($select=itemCode,itemName,netAmount)</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$expand=items($filter=billingGroup eq 'DEFAULT')</span></span></div>
+        </div>
+        <div class="body-section">
+          <div class="body-title">ตัวอย่าง Response (items)</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"ID"</span>: <span class="cv">"8dc208b4-..."</span>,
+  <span class="ck">"hisDocumentType"</span>: <span class="cv">"RECEIPT_OPD"</span>,
+  <span class="ck">"billDate"</span>: <span class="cv">"2026-09-15"</span>,
+  <span class="ck">"currency"</span>: <span class="cv">"THB"</span>,
+  <span class="ck">"items"</span>: [
+    {
+      <span class="ck">"ID"</span>: <span class="cv">"..."</span>,
+      <span class="ck">"itemNumber"</span>: <span class="cn">1</span>,
+      <span class="ck">"itemCode"</span>: <span class="cv">"SVC-CONSULT-001"</span>,
+      <span class="ck">"netAmount"</span>: <span class="cn">500</span>,
+      <span class="ck">"billingGroup"</span>: <span class="cv">"DEFAULT"</span>,
+      <span class="ck">"fiPosting_ID"</span>: <span class="cv">"..."</span>   <span class="cc">// null ถ้ายังไม่ได้ postFI</span>
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch + Payments -->
+    <div class="endpoint-card section-anchor" id="get-batch-payments">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Batches<span class="param">?$expand=payments</span></div>
+          <div class="endpoint-desc">Batch พร้อม payment ทั้งหมด</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches<span class="cq">?$expand=payments</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches(guid'...')<span class="cq">?$expand=payments($orderby=paymentRunningNumber)</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Full -->
+    <div class="endpoint-card section-anchor" id="get-batch-full">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Batches<span class="param">?$expand=items,payments,journalEntryPostings</span></div>
+          <div class="endpoint-desc">Batch ครบทุก relation — Items, Payments, FI Postings</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="body-title">Full relation (ทุก level)</div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches(guid'...')<span class="cq">?$expand=items,payments,journalEntryPostings</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Batches(guid'...')<span class="cq">?$expand=items,payments,journalEntryPostings($expand=messages)</span></span></div>
+        </div>
+        <div class="body-section">
+          <div class="body-title">ตัวอย่าง Response (full)</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"ID"</span>: <span class="cv">"8dc208b4-..."</span>,
+  <span class="ck">"hisDocumentType"</span>: <span class="cv">"RECEIPT_OPD"</span>,
+  <span class="ck">"billDate"</span>: <span class="cv">"2026-09-15"</span>,
+  <span class="ck">"items"</span>: [ <span class="cc">/* array of Items */</span> ],
+  <span class="ck">"payments"</span>: [ <span class="cc">/* array of Payments */</span> ],
+  <span class="ck">"journalEntryPostings"</span>: [
+    {
+      <span class="ck">"ID"</span>: <span class="cv">"..."</span>,
+      <span class="ck">"JournalEntryDocumentNumber"</span>: <span class="cv">"1000000012"</span>,
+      <span class="ck">"JournalEntryCompanyCode"</span>: <span class="cv">"11AA"</span>,
+      <span class="ck">"JournalEntryYear"</span>: <span class="cv">"2026"</span>,
+      <span class="ck">"JournalEntryStatus"</span>: <span class="cv">"POSTED"</span>,
+      <span class="ck">"messages"</span>: [ <span class="cc">/* array of JournalEntryMessages */</span> ]
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!--  GET ITEMS                                 -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section section-anchor" id="get-items">
+    <div class="section-title">GET Items</div>
+    <div class="section-desc">ดึง line items โดยตรง — มีประโยชน์เมื่อต้องการ filter/aggregate ระดับ item</div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Items</div>
+          <div class="endpoint-desc">ดึง items ทั้งหมด</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items</span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$filter=billingGroup eq 'DEFAULT' and netAmount gt 100</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$filter=fiPosting_ID eq null</span>&nbsp;<span class="cc">← items ที่ยังไม่ post FI</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$select=itemCode,itemName,netAmount,billingGroup&$orderby=itemNumber</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card section-anchor" id="get-items-filter">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/Items<span class="param">?$filter=batch_ID eq &lt;guid&gt;</span></div>
+          <div class="endpoint-desc">ดึง items ของ batch เดียว พร้อม expand batch</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9&$expand=batch</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/Items<span class="cq">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9&$expand=fiPosting</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!--  GET POSTINGS                              -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section section-anchor" id="get-postings">
+    <div class="section-title">GET JournalEntryPostings</div>
+    <div class="section-desc">ดูผลลัพธ์การ post FI ที่บันทึกกลับมาจาก S/4HANA</div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/JournalEntryPostings</div>
+          <div class="endpoint-desc">ดึง posting ทั้งหมด</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings</span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$filter=JournalEntryStatus eq 'POSTED'</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$filter=JournalEntryYear eq '2026'</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card section-anchor" id="get-postings-msg">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/JournalEntryPostings<span class="param">?$expand=messages</span></div>
+          <div class="endpoint-desc">Posting พร้อม log messages จาก S/4HANA</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$expand=messages</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$expand=messages&$orderby=messages/lineNumber</span></span></div>
+        </div>
+        <div class="body-section">
+          <div class="body-title">ตัวอย่าง Response</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"ID"</span>: <span class="cv">"..."</span>,
+  <span class="ck">"batch_ID"</span>: <span class="cv">"8dc208b4-..."</span>,
+  <span class="ck">"JournalEntryDocumentNumber"</span>: <span class="cv">"1000000012"</span>,
+  <span class="ck">"JournalEntryCompanyCode"</span>: <span class="cv">"11AA"</span>,
+  <span class="ck">"JournalEntryYear"</span>: <span class="cv">"2026"</span>,
+  <span class="ck">"JournalEntryStatus"</span>: <span class="cv">"POSTED"</span>,
+  <span class="ck">"messages"</span>: [
+    { <span class="ck">"lineNumber"</span>: <span class="cn">1</span>, <span class="ck">"msgType"</span>: <span class="cv">"S"</span>, <span class="ck">"message"</span>: <span class="cv">"FI Document 1000000012/2026 posted to S/4HANA"</span> },
+    { <span class="ck">"lineNumber"</span>: <span class="cn">2</span>, <span class="ck">"msgType"</span>: <span class="cv">"I"</span>, <span class="ck">"message"</span>: <span class="cv">"Billing group: DEFAULT, Items: 2"</span> },
+    { <span class="ck">"lineNumber"</span>: <span class="cn">3</span>, <span class="ck">"msgType"</span>: <span class="cv">"I"</span>, <span class="ck">"message"</span>: <span class="cv">"Company code: 11AA"</span> }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card section-anchor" id="get-postings-filter">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">/JournalEntryPostings<span class="param">?$filter=batch_ID eq &lt;guid&gt;</span></div>
+          <div class="endpoint-desc">ดู posting ของ batch ที่ระบุ พร้อม messages</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+          <div class="url-line"><span class="method-tag pill-get">GET</span><span class="url-code">/JournalEntryPostings<span class="cq">?$expand=messages&$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!--  ENUMS                                     -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="section section-anchor" id="enums">
+    <div class="section-title">Enum Values</div>
+    <div class="section-desc">ค่าที่ยอมรับได้สำหรับ field ประเภท enum</div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">ENUM</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">hisDocumentType</div>
+          <div class="endpoint-desc">ประเภทเอกสาร HIS</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="enum-list">
+            <span class="enum-chip">INVOICE_OPD</span>
+            <span class="enum-chip">INVOICE_IPD_INTERIM</span>
+            <span class="enum-chip">INVOICE_IPD_FINAL</span>
+            <span class="enum-chip">RECEIPT_OPD</span>
+            <span class="enum-chip">RECEIPT_IPD_INTERIM</span>
+            <span class="enum-chip">RECEIPT_IPD_FINAL</span>
+            <span class="enum-chip">ONWARD</span>
+            <span class="enum-chip">CREDIT_NOTE</span>
+            <span class="enum-chip">DEBIT_NOTE</span>
+            <span class="enum-chip">DEPOSIT</span>
+            <span class="enum-chip">REFUND_DEPOSIT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">ENUM</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">paymentMethod</div>
+          <div class="endpoint-desc">วิธีชำระเงิน</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="enum-list">
+            <span class="enum-chip">CASH</span>
+            <span class="enum-chip">TRANSFER</span>
+            <span class="enum-chip">EDC</span>
+            <span class="enum-chip">QR</span>
+            <span class="enum-chip">VOUCHER</span>
+            <span class="enum-chip">DEPOSIT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">ENUM</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">bankCode</div>
+          <div class="endpoint-desc">รหัสธนาคาร (ใช้กับ TRANSFER / QR / EDC)</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <div class="enum-list">
+            <span class="enum-chip">BBL</span><span class="enum-chip">KBANK</span><span class="enum-chip">KTB</span>
+            <span class="enum-chip">TTB</span><span class="enum-chip">SCB</span><span class="enum-chip">BAY</span>
+            <span class="enum-chip">KKP</span><span class="enum-chip">CIMBT</span><span class="enum-chip">TISCO</span>
+            <span class="enum-chip">UOBT</span><span class="enum-chip">TCD</span><span class="enum-chip">LHFG</span>
+            <span class="enum-chip">ICBCT</span><span class="enum-chip">SME</span><span class="enum-chip">BAAC</span>
+            <span class="enum-chip">EXIM</span><span class="enum-chip">GSB</span><span class="enum-chip">GHB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint-card">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">ENUM</span>
+        <div class="endpoint-info">
+          <div class="endpoint-path">msgType (JournalEntryMessages)</div>
+          <div class="endpoint-desc">ประเภท message จาก FI posting</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="body-section">
+          <table class="param-table">
+            <tr><th>ค่า</th><th>ความหมาย</th></tr>
+            <tr><td><code>S</code></td><td>Success — posting สำเร็จ</td></tr>
+            <tr><td><code>I</code></td><td>Info — ข้อมูลเพิ่มเติม</td></tr>
+            <tr><td><code>W</code></td><td>Warning — คำเตือน</td></tr>
+            <tr><td><code>E</code></td><td>Error — ผิดพลาด</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+    Hospital Accounting Service — OData v4 &nbsp;|&nbsp; CAP Node.js v10 &nbsp;|&nbsp; @cap-js/postgres &nbsp;|&nbsp; BTP Cloud Foundry
+  </div>
+
+</div>
+</div>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+
+function copyCode(btn) {
+  const pre = btn.nextElementSibling || btn.parentElement.querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Auto-open first card in each section
+document.querySelectorAll('.endpoint-card:first-of-type .endpoint-header').forEach(h => {
+  const body = h.nextElementSibling;
+  const chevron = h.querySelector('.chevron');
+  if (body) { body.classList.add('open'); chevron.classList.add('open'); }
+});
+
+// Smooth scroll + active nav
+document.querySelectorAll('.nav-item').forEach(link => {
+  link.addEventListener('click', e => {
+    document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

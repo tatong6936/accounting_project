@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post FI Document — Hospital Accounting Service</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface2: #f8f9fb;
+  --border: #e2e5ea;
+  --text: #1a1d23;
+  --muted: #6b7280;
+  --get: #0369a1; --get-bg: #e0f2fe; --get-border: #bae6fd;
+  --post: #15803d; --post-bg: #dcfce7; --post-border: #bbf7d0;
+  --nav: #1e2761;
+  --accent: #2563eb;
+  --code-bg: #1e293b;
+  --warn-bg: #fff7ed; --warn-border: #fed7aa; --warn-text: #7c3d12;
+  --ok-bg: #f0fdf4; --ok-border: #bbf7d0; --ok-text: #166534;
+  --info-bg: #eff6ff; --info-border: #bfdbfe; --info-text: #1e40af;
+  --err-bg: #fef2f2; --err-border: #fecaca; --err-text: #991b1b;
+  --radius: 8px;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 260px; background: var(--nav); color: white; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { flex: 1; padding: 2rem 2.5rem; max-width: 920px; }
+
+.sidebar-header { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-header .title { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.sidebar-header .sub { font-size: 11px; opacity: 0.5; margin-top: 3px; }
+.sidebar-section { padding: 0.75rem 0 0.25rem; }
+.sidebar-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.4; padding: 0 1.25rem 0.4rem; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 1.25rem; font-size: 13px; cursor: pointer; opacity: 0.72; transition: opacity 0.15s, background 0.15s; border: none; background: none; color: white; width: 100%; text-align: left; text-decoration: none; border-radius: 0; }
+.nav-item:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+.nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35); flex-shrink: 0; }
+.nav-back { display: flex; align-items: center; gap: 6px; padding: 0.75rem 1.25rem; font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.nav-back:hover { color: rgba(255,255,255,0.85); }
+
+.section { margin-bottom: 2.5rem; scroll-margin-top: 1.5rem; }
+.section-title { font-size: 20px; font-weight: 600; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem; }
+.section-desc { color: var(--muted); font-size: 13px; margin-bottom: 1.25rem; }
+
+/* Alert boxes */
+.alert { border-radius: 8px; padding: 0.85rem 1.1rem; margin-bottom: 1rem; font-size: 13px; line-height: 1.6; }
+.alert-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+.alert-ok { background: var(--ok-bg); border: 1px solid var(--ok-border); color: var(--ok-text); }
+.alert-info { background: var(--info-bg); border: 1px solid var(--info-border); color: var(--info-text); }
+.alert-err { background: var(--err-bg); border: 1px solid var(--err-border); color: var(--err-text); }
+.alert strong { font-weight: 600; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 1.1rem; overflow: hidden; }
+.card-header { display: flex; align-items: flex-start; gap: 12px; padding: 1rem 1.25rem; cursor: pointer; user-select: none; }
+.card-header:hover { background: var(--surface2); }
+.card-body { border-top: 1px solid var(--border); display: none; }
+.card-body.open { display: block; }
+.card-section { padding: 1rem 1.25rem; }
+.card-section + .card-section { border-top: 1px solid var(--border); }
+.card-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.6rem; }
+.chevron { color: var(--muted); font-size: 16px; transition: transform 0.2s; flex-shrink: 0; margin-top: 2px; }
+.chevron.open { transform: rotate(90deg); }
+
+/* Method pills */
+.method-pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+.method-post { background: var(--post-bg); color: var(--post); border: 1px solid var(--post-border); }
+.method-get { background: var(--get-bg); color: var(--get); border: 1px solid var(--get-border); }
+.endpoint-path { font-family: 'Consolas','Courier New',monospace; font-size: 13px; font-weight: 500; }
+.endpoint-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Code */
+.code-wrap { position: relative; }
+.code-block { background: var(--code-bg); border-radius: 6px; padding: 1rem 1.1rem; font-family: 'Consolas','Courier New',monospace; font-size: 12px; line-height: 1.8; overflow-x: auto; color: #e2e8f0; white-space: pre; }
+.copy-btn { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: #94a3b8; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
+.copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+.copy-btn.copied { background: #166534; color: #86efac; }
+
+.url-line { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 1rem; font-family: 'Consolas','Courier New',monospace; font-size: 12.5px; color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.url-tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px; flex-shrink: 0; }
+.tag-post { background: var(--post-bg); color: var(--post); }
+.tag-get { background: var(--get-bg); color: var(--get); }
+.url-code { word-break: break-all; color: var(--accent); }
+.url-qs { color: #7c3aed; }
+
+/* Response rows */
+.res-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.res-row:last-child { border-bottom: none; }
+.status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; min-width: 38px; text-align: center; }
+.s200 { background: #dcfce7; color: #166534; }
+.s400 { background: #fef3c7; color: #92400e; }
+.s404 { background: #fee2e2; color: #991b1b; }
+
+/* Tables */
+.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.tbl th { text-align: left; padding: 6px 10px; background: var(--surface2); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl code { background: #f1f5f9; color: #0f172a; padding: 1px 5px; border-radius: 3px; font-family: 'Consolas','Courier New',monospace; font-size: 11.5px; }
+
+/* Flow steps */
+.flow { display: flex; flex-direction: column; gap: 0; }
+.flow-step { display: flex; gap: 16px; position: relative; }
+.flow-step::before { content: ''; position: absolute; left: 15px; top: 32px; bottom: -1px; width: 2px; background: var(--border); }
+.flow-step:last-child::before { display: none; }
+.step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--nav); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+.step-body { flex: 1; padding-bottom: 1.25rem; }
+.step-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.step-desc { font-size: 13px; color: var(--muted); }
+
+/* GL table */
+.gl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.gl-table th { padding: 8px 12px; background: #1e2761; color: white; font-size: 12px; text-align: left; }
+.gl-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-family: 'Consolas','Courier New',monospace; font-size: 12px; }
+.gl-table tr:last-child td { border-bottom: none; }
+.debit { color: #dc2626; font-weight: 600; }
+.credit { color: #16a34a; font-weight: 600; }
+.gl-table tr:hover td { background: var(--surface2); }
+
+/* Syntax colors */
+.ck { color: #7dd3fc; }
+.cv { color: #86efac; }
+.cn { color: #fbbf24; }
+.cc { color: #64748b; font-style: italic; }
+.ce { color: #f87171; }
+.cq { color: #c084fc; }
+.cr { color: #fb923c; }
+
+/* Tag chips */
+.chip { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin: 2px; font-family: 'Consolas','Courier New',monospace; }
+.chip-blue { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+.chip-green { background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); }
+.chip-red { background: var(--err-bg); color: var(--err-text); border: 1px solid var(--err-border); }
+.chip-gray { background: #f1f5f9; color: #475569; border: 1px solid var(--border); }
+
+/* base url */
+.base-url-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1.1rem; margin-bottom: 2rem; }
+.base-url-box .lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+.base-url-box code { font-family: 'Consolas','Courier New',monospace; font-size: 12px; color: var(--accent); word-break: break-all; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <a class="nav-back" href="API_REFERENCE_ACCOUNTING.html">← กลับ API Reference</a>
+  <div class="sidebar-header">
+    <div class="title">Post FI Document</div>
+    <div class="sub">SOAP → S/4HANA Cloud my442293</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Overview</div>
+    <a class="nav-item" href="#overview"><span class="dot"></span> ภาพรวมกระบวนการ</a>
+    <a class="nav-item" href="#gl-mapping"><span class="dot"></span> GL Account Mapping</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">API Call</div>
+    <a class="nav-item" href="#api-single"><span class="dot"></span> Post batch เดียว</a>
+    <a class="nav-item" href="#api-bulk"><span class="dot"></span> Post ทุก batch ของวัน</a>
+    <a class="nav-item" href="#response"><span class="dot"></span> Response &amp; Status</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">ตรวจสอบผล</div>
+    <a class="nav-item" href="#check-posting"><span class="dot"></span> ดู JournalEntryPostings</a>
+    <a class="nav-item" href="#check-messages"><span class="dot"></span> ดู Messages (log)</a>
+    <a class="nav-item" href="#check-items"><span class="dot"></span> ดู Items ที่ post แล้ว</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">ข้อมูลทางเทคนิค</div>
+    <a class="nav-item" href="#soap-detail"><span class="dot"></span> SOAP Request Structure</a>
+    <a class="nav-item" href="#errors"><span class="dot"></span> Error &amp; Troubleshoot</a>
+    <a class="nav-item" href="#logic"><span class="dot"></span> Logic ภายใน postFI</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div class="base-url-box">
+    <div class="lbl">Base URL</div>
+    <code>https://it-one-co--ltd-mid-market-demo-demo-accounting-srv.cfapps.ap11.hana.ondemand.com/odata/v4/accounting</code>
+  </div>
+
+  <!-- ── OVERVIEW ────────────────────────────── -->
+  <div class="section" id="overview">
+    <div class="section-title">ภาพรวมกระบวนการ Post FI</div>
+
+    <div class="alert alert-info">
+      <strong>postFI</strong> คือ action ที่รับ Batch จาก CAP → รวมยอดตาม billingGroup → ส่ง SOAP ไปยัง S/4HANA Cloud → บันทึกเลขเอกสาร FI กลับใน JournalEntryPostings
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">รับ Request</div>
+          <div class="step-desc">POST /postFI พร้อม <code>batchId</code> หรือ <code>hisDocumentType + billDate</code> — ดึง batch จาก PostgreSQL</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">ตรวจ Skip</div>
+          <div class="step-desc">ถ้า batch นั้นมี JournalEntryPosting อยู่แล้ว → ข้าม (ไม่ post ซ้ำ)</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Group Items ตาม billingGroup</div>
+          <div class="step-desc">Items ที่มี billingGroup เดียวกัน → รวมเป็น 1 Journal Entry — กลุ่มที่ไม่ระบุ billingGroup จะใช้ <code>"DEFAULT"</code></div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">ส่ง SOAP ต่อ group</div>
+          <div class="step-desc">เรียก <code>JournalEntryCreateRequestConfirmation_InAsync</code> ไปยัง my442293-api.s4hana.cloud.sap ต่อ 1 group — ถ้า group ใด fail ยัง post group อื่นต่อได้ (partial success)</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">บันทึกผลลัพธ์</div>
+          <div class="step-desc">Insert JournalEntryPostings + JournalEntryMessages ลง PostgreSQL, update <code>fiPosting_ID</code> ใน Items</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GL MAPPING ─────────────────────────── -->
+  <div class="section" id="gl-mapping">
+    <div class="section-title">GL Account Mapping</div>
+    <div class="section-desc">ทุกครั้งที่ postFI จะสร้าง Journal Entry 2 รายการต่อ 1 billingGroup เสมอ</div>
+
+    <table class="gl-table">
+      <tr>
+        <th>D/C</th>
+        <th>GL Account</th>
+        <th>Profit Center</th>
+        <th>Cost Center</th>
+        <th>Functional Area</th>
+        <th>Amount</th>
+      </tr>
+      <tr>
+        <td><span class="debit">Debit (D)</span></td>
+        <td><strong>65004000</strong></td>
+        <td>11AAH00</td>
+        <td>11AA-30000</td>
+        <td>ZB60</td>
+        <td>+netAmount รวม</td>
+      </tr>
+      <tr>
+        <td><span class="credit">Credit (C)</span></td>
+        <td><strong>10010000</strong></td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+        <td>−netAmount รวม</td>
+      </tr>
+    </table>
+
+    <div style="margin-top:1rem;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">ค่าคงที่ใน <code>srv/s4h-journal.cjs</code></div>
+      <div class="code-wrap">
+<pre class="code-block"><span class="ck">const</span> GL_DEBIT        = <span class="cv">'65004000'</span>;
+<span class="ck">const</span> GL_CREDIT       = <span class="cv">'10010000'</span>;
+<span class="ck">const</span> PROFIT_CENTER   = <span class="cv">'11AAH00'</span>;
+<span class="ck">const</span> COST_CENTER     = <span class="cv">'11AA-30000'</span>;
+<span class="ck">const</span> FUNCTIONAL_AREA = <span class="cv">'ZB60'</span>;
+<span class="ck">const</span> S4H_COMPANY_CODE = <span class="cv">'11AA'</span>;</pre>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── API: Single ────────────────────────── -->
+  <div class="section" id="api-single">
+    <div class="section-title">POST /postFI — batch เดียว</div>
+    <div class="section-desc">ระบุ <code>batchId</code> เมื่อต้องการ post เฉพาะ batch นั้น</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill method-post">POST</span>
+        <div style="flex:1">
+          <div class="endpoint-path">/postFI</div>
+          <div class="endpoint-desc">Post batch เดียวด้วย batchId (UUID)</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="card-section-title">URL &amp; Headers</div>
+          <div class="url-line"><span class="url-tag tag-post">POST</span><span class="url-code">/postFI</span></div>
+          <div class="code-wrap" style="margin-top:8px;">
+<pre class="code-block"><span class="ck">Content-Type</span>: <span class="cv">application/json</span>
+<span class="ck">Authorization</span>: <span class="cv">Bearer &lt;token&gt;</span></pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">Request Body</div>
+          <div class="code-wrap">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre class="code-block">{
+  <span class="ck">"batchId"</span>: <span class="cv">"8dc208b4-a592-442d-8cdc-5d791acb88b9"</span>
+}</pre>
+          </div>
+          <table class="tbl" style="margin-top:10px;">
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>คำอธิบาย</th></tr>
+            <tr><td><code>batchId</code></td><td>UUID string</td><td><span style="color:#d97706;font-weight:600;">yes</span></td><td>ID ของ Batch ที่ต้องการ post FI</td></tr>
+          </table>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ตัวอย่าง Postman</div>
+          <div style="font-size:12.5px;line-height:1.9;">
+            Method: <strong>POST</strong><br>
+            URL: <code style="font-size:12px;">{{base_url}}/postFI</code><br>
+            Body: raw → JSON<br>
+            Auth: Bearer Token
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── API: Bulk ──────────────────────────── -->
+  <div class="section" id="api-bulk">
+    <div class="section-title">POST /postFI — ทุก batch ของวัน</div>
+    <div class="section-desc">ระบุ <code>hisDocumentType</code> + <code>billDate</code> เพื่อ post ทุก batch ที่ยังไม่ได้ post ในวันนั้น</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill method-post">POST</span>
+        <div style="flex:1">
+          <div class="endpoint-path">/postFI</div>
+          <div class="endpoint-desc">Post ทุก batch ของ document type และวันที่ที่ระบุ</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="card-section-title">Request Body</div>
+          <div class="code-wrap">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre class="code-block">{
+  <span class="ck">"hisDocumentType"</span>: <span class="cv">"RECEIPT_OPD"</span>,
+  <span class="ck">"billDate"</span>:        <span class="cv">"2026-09-15"</span>
+}</pre>
+          </div>
+          <table class="tbl" style="margin-top:10px;">
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>คำอธิบาย</th></tr>
+            <tr><td><code>hisDocumentType</code></td><td>String</td><td><span style="color:#d97706;font-weight:600;">yes</span></td><td>enum เช่น RECEIPT_OPD, INVOICE_OPD</td></tr>
+            <tr><td><code>billDate</code></td><td>Date (YYYY-MM-DD)</td><td><span style="color:#d97706;font-weight:600;">yes</span></td><td>วันที่บิล</td></tr>
+          </table>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">hisDocumentType ที่ใช้ได้</div>
+          <div>
+            <span class="chip chip-blue">INVOICE_OPD</span>
+            <span class="chip chip-blue">INVOICE_IPD_INTERIM</span>
+            <span class="chip chip-blue">INVOICE_IPD_FINAL</span>
+            <span class="chip chip-blue">RECEIPT_OPD</span>
+            <span class="chip chip-blue">RECEIPT_IPD_INTERIM</span>
+            <span class="chip chip-blue">RECEIPT_IPD_FINAL</span>
+            <span class="chip chip-gray">ONWARD</span>
+            <span class="chip chip-gray">CREDIT_NOTE</span>
+            <span class="chip chip-gray">DEBIT_NOTE</span>
+            <span class="chip chip-gray">DEPOSIT</span>
+            <span class="chip chip-gray">REFUND_DEPOSIT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESPONSE ───────────────────────────── -->
+  <div class="section" id="response">
+    <div class="section-title">Response &amp; Status</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f1f5f9;color:#475569;border:1px solid var(--border);">RES</span>
+        <div style="flex:1">
+          <div class="endpoint-path">postFI Response</div>
+          <div class="endpoint-desc">format: string สรุปผล</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="card-section-title">HTTP 200 — Success (มีหรือไม่มี error บางส่วน)</div>
+          <div class="code-wrap">
+<pre class="code-block"><span class="cc">// ทุก batch post สำเร็จ</span>
+<span class="cv">"postFI done — processed: 2, skipped: 0, failed: 0, FI docs: 3"</span>
+
+<span class="cc">// batch หนึ่งถูก skip (post ซ้ำ)</span>
+<span class="cv">"postFI done — processed: 1, skipped: 1, failed: 0, FI docs: 2"</span>
+
+<span class="cc">// มี error บางส่วน (partial success)</span>
+<span class="cv">"postFI done — processed: 1, skipped: 0, failed: 1, FI docs: 1 | ERRORS: Batch xxx group DEFAULT: Not enough budget available."</span></pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ความหมายของ field ใน response</div>
+          <table class="tbl">
+            <tr><th>Field</th><th>ความหมาย</th></tr>
+            <tr><td><code>processed</code></td><td>จำนวน batch ที่ดำเนินการเสร็จ (มี FI doc อย่างน้อย 1 group)</td></tr>
+            <tr><td><code>skipped</code></td><td>จำนวน batch ที่ข้าม (มี JournalEntryPosting อยู่แล้ว)</td></tr>
+            <tr><td><code>failed</code></td><td>จำนวน batch ที่ล้มเหลวทั้งหมด (ทุก group fail)</td></tr>
+            <tr><td><code>FI docs</code></td><td>จำนวน Journal Entry ที่สร้างใน S/4HANA สำเร็จ</td></tr>
+            <tr><td><code>ERRORS</code></td><td>รายละเอียด error (มีถ้ามี group ที่ fail)</td></tr>
+          </table>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">HTTP Error Codes</div>
+          <div class="res-row"><span class="status-badge s400">400</span>ไม่ระบุ batchId หรือ hisDocumentType+billDate ไม่ครบ</div>
+          <div class="res-row"><span class="status-badge s404">404</span>batchId ที่ระบุไม่พบใน DB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── CHECK POSTING ──────────────────────── -->
+  <div class="section" id="check-posting">
+    <div class="section-title">ตรวจสอบผล — JournalEntryPostings</div>
+    <div class="section-desc">หลัง postFI สำเร็จ ดูเลขเอกสาร FI จาก S/4HANA</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div style="flex:1">
+          <div class="endpoint-path">/JournalEntryPostings<span style="color:#7c3aed;">?$filter=batch_ID eq &lt;guid&gt;</span></div>
+          <div class="endpoint-desc">ดู posting ของ batch ที่ระบุ</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/JournalEntryPostings<span class="url-qs">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/JournalEntryPostings<span class="url-qs">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9&$expand=messages</span></span></div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ตัวอย่าง Response</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"@odata.context"</span>: <span class="cv">"...$metadata#JournalEntryPostings"</span>,
+  <span class="ck">"value"</span>: [
+    {
+      <span class="ck">"ID"</span>:                         <span class="cv">"a1b2c3d4-..."</span>,
+      <span class="ck">"batch_ID"</span>:                  <span class="cv">"8dc208b4-..."</span>,
+      <span class="ck">"JournalEntryDocumentNumber"</span>: <span class="cv">"1000000012"</span>,   <span class="cc">// เลขเอกสาร FI จาก S/4HANA</span>
+      <span class="ck">"JournalEntryCompanyCode"</span>:   <span class="cv">"11AA"</span>,
+      <span class="ck">"JournalEntryYear"</span>:          <span class="cv">"2026"</span>,
+      <span class="ck">"JournalEntryStatus"</span>:        <span class="cv">"POSTED"</span>
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">Fields ใน JournalEntryPostings</div>
+          <table class="tbl">
+            <tr><th>Field</th><th>คำอธิบาย</th></tr>
+            <tr><td><code>JournalEntryDocumentNumber</code></td><td>เลขเอกสาร FI ใน S/4HANA (10 หลัก)</td></tr>
+            <tr><td><code>JournalEntryCompanyCode</code></td><td>Company Code ที่ใช้ post (11AA)</td></tr>
+            <tr><td><code>JournalEntryYear</code></td><td>Fiscal Year (ปี ค.ศ.)</td></tr>
+            <tr><td><code>JournalEntryStatus</code></td><td>สถานะ — ปัจจุบันเป็น POSTED เสมอเมื่อสร้างสำเร็จ</td></tr>
+            <tr><td><code>batch_ID</code></td><td>FK → Batches.ID</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECK MESSAGES ─────────────────────── -->
+  <div class="section" id="check-messages">
+    <div class="section-title">ตรวจสอบผล — Messages (Log)</div>
+    <div class="section-desc">Messages บันทึก log การ post FI แต่ละรายการ</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div style="flex:1">
+          <div class="endpoint-path">/JournalEntryPostings<span style="color:#7c3aed;">?$expand=messages&$filter=batch_ID eq &lt;guid&gt;</span></div>
+          <div class="endpoint-desc">Posting พร้อม log messages</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/JournalEntryPostings<span class="url-qs">?$expand=messages&$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ตัวอย่าง Response (messages)</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"JournalEntryDocumentNumber"</span>: <span class="cv">"1000000012"</span>,
+  <span class="ck">"messages"</span>: [
+    {
+      <span class="ck">"lineNumber"</span>: <span class="cn">1</span>,
+      <span class="ck">"msgType"</span>:   <span class="cv">"S"</span>,
+      <span class="ck">"message"</span>:  <span class="cv">"FI Document 1000000012/2026 posted to S/4HANA"</span>
+    },
+    {
+      <span class="ck">"lineNumber"</span>: <span class="cn">2</span>,
+      <span class="ck">"msgType"</span>:   <span class="cv">"I"</span>,
+      <span class="ck">"message"</span>:  <span class="cv">"Billing group: DEFAULT, Items: 3"</span>
+    },
+    {
+      <span class="ck">"lineNumber"</span>: <span class="cn">3</span>,
+      <span class="ck">"msgType"</span>:   <span class="cv">"I"</span>,
+      <span class="ck">"message"</span>:  <span class="cv">"Company code: 11AA"</span>
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">msgType Values</div>
+          <table class="tbl">
+            <tr><th>msgType</th><th>ความหมาย</th></tr>
+            <tr><td><code>S</code></td><td>Success — posting สำเร็จ</td></tr>
+            <tr><td><code>I</code></td><td>Info — ข้อมูลเพิ่มเติม (billingGroup, company code)</td></tr>
+            <tr><td><code>W</code></td><td>Warning — คำเตือน</td></tr>
+            <tr><td><code>E</code></td><td>Error — มีข้อผิดพลาด</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECK ITEMS ────────────────────────── -->
+  <div class="section" id="check-items">
+    <div class="section-title">ตรวจสอบผล — Items ที่ post แล้ว</div>
+    <div class="section-desc">หลัง postFI สำเร็จ Items จะมี <code>fiPosting_ID</code> ชี้ไปยัง JournalEntryPosting</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill method-get">GET</span>
+        <div style="flex:1">
+          <div class="endpoint-path">/Items<span style="color:#7c3aed;">?$filter=batch_ID eq &lt;guid&gt;&$expand=fiPosting</span></div>
+          <div class="endpoint-desc">Items พร้อมข้อมูล FI Posting ที่เชื่อมอยู่</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/Items<span class="url-qs">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9</span></span></div>
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/Items<span class="url-qs">?$filter=batch_ID eq 8dc208b4-a592-442d-8cdc-5d791acb88b9&$expand=fiPosting</span></span></div>
+          <div class="url-line"><span class="url-tag tag-get">GET</span><span class="url-code">/Items<span class="url-qs">?$filter=fiPosting_ID eq null</span>&nbsp;<span style="color:#64748b;font-style:italic;">← items ที่ยังไม่ได้ post</span></span></div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ตัวอย่าง Response</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"ID"</span>:           <span class="cv">"item-uuid-..."</span>,
+  <span class="ck">"itemCode"</span>:     <span class="cv">"SVC-CONSULT-001"</span>,
+  <span class="ck">"netAmount"</span>:    <span class="cn">500</span>,
+  <span class="ck">"billingGroup"</span>: <span class="cv">"DEFAULT"</span>,
+  <span class="ck">"fiPosting_ID"</span>: <span class="cv">"a1b2c3d4-..."</span>,    <span class="cc">// null ถ้ายังไม่ได้ post</span>
+  <span class="ck">"fiPosting"</span>: {                         <span class="cc">// ถ้า $expand=fiPosting</span>
+    <span class="ck">"JournalEntryDocumentNumber"</span>: <span class="cv">"1000000012"</span>,
+    <span class="ck">"JournalEntryStatus"</span>:        <span class="cv">"POSTED"</span>
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ── SOAP DETAIL ────────────────────────── -->
+  <div class="section" id="soap-detail">
+    <div class="section-title">SOAP Request Structure (ข้อมูลทางเทคนิค)</div>
+    <div class="section-desc">รายละเอียด SOAP ที่ส่งไปยัง S/4HANA — สำหรับ debug หรือ reference</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#faf5ff;color:#7c3aed;border:1px solid #e9d5ff;">SOAP</span>
+        <div style="flex:1">
+          <div class="endpoint-path">JournalEntryCreateRequestConfirmation_InAsync</div>
+          <div class="endpoint-desc">SOAP Operation — WSDL: JOURNALENTRYCREATEREQUESTCONFI.wsdl</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body">
+        <div class="card-section">
+          <div class="card-section-title">SOAP Endpoint</div>
+          <div class="code-wrap">
+<pre class="code-block"><span class="ck">Host</span>:      <span class="cv">https://my442293-api.s4hana.cloud.sap</span>
+<span class="ck">Path</span>:      <span class="cv">/sap/bc/srt/scs_ext/sap/journalentrycreaterequestconfi</span>
+<span class="ck">Auth</span>:      BasicAuth (อ่านจาก BTP Destination: S4H_SOAP_DEST)
+<span class="ck">User</span>:      CAP_COMM_USER
+<span class="ck">CommArr</span>:   SAP_COM_0002</pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">Request Body (simplified)</div>
+          <div class="code-wrap">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+<pre class="code-block">{
+  <span class="ck">"MessageHeader"</span>: {
+    <span class="ck">"ID"</span>:                     <span class="cv">"&lt;uuid-hex&gt;"</span>,
+    <span class="ck">"CreationDateTime"</span>:       <span class="cv">"2026-09-15T08:00:00.000Z"</span>,
+    <span class="ck">"SenderBusinessSystemID"</span>: <span class="cv">"CAP_SYSTEM"</span>
+  },
+  <span class="ck">"JournalEntryCreateRequest"</span>: {
+    <span class="ck">"MessageHeader"</span>: { <span class="cc">/* same format */</span> },
+    <span class="ck">"JournalEntry"</span>: {
+      <span class="ck">"OriginalReferenceDocumentType"</span>: <span class="cv">"BKPFF"</span>,
+      <span class="ck">"BusinessTransactionType"</span>:       <span class="cv">"RFBU"</span>,
+      <span class="ck">"AccountingDocumentType"</span>:        <span class="cv">"SA"</span>,
+      <span class="ck">"DocumentReferenceID"</span>:           <span class="cv">"DOC-2026-001234-1"</span>,  <span class="cc">// max 16 chars</span>
+      <span class="ck">"CreatedByUser"</span>:                 <span class="cv">"CAP_COMM_USER"</span>,
+      <span class="ck">"CompanyCode"</span>:                   <span class="cv">"11AA"</span>,
+      <span class="ck">"DocumentDate"</span>:                  <span class="cv">"2026-09-15"</span>,
+      <span class="ck">"PostingDate"</span>:                   <span class="cv">"2026-09-15"</span>,
+      <span class="ck">"Item"</span>: [
+        {
+          <span class="ck">"ReferenceDocumentItem"</span>:       <span class="cv">"0000000001"</span>,
+          <span class="ck">"GLAccount"</span>:                   <span class="cv">"65004000"</span>,
+          <span class="ck">"DebitCreditCode"</span>:             <span class="cv">"D"</span>,
+          <span class="ck">"AmountInTransactionCurrency"</span>: { <span class="ck">"currencyCode"</span>: <span class="cv">"THB"</span>, <span class="ck">"$value"</span>: <span class="cn">600</span> },
+          <span class="ck">"AccountAssignment"</span>: {
+            <span class="ck">"ProfitCenter"</span>:   <span class="cv">"11AAH00"</span>,
+            <span class="ck">"CostCenter"</span>:     <span class="cv">"11AA-30000"</span>,
+            <span class="ck">"FunctionalArea"</span>: <span class="cv">"ZB60"</span>
+          }
+        },
+        {
+          <span class="ck">"ReferenceDocumentItem"</span>:       <span class="cv">"0000000002"</span>,
+          <span class="ck">"GLAccount"</span>:                   <span class="cv">"10010000"</span>,
+          <span class="ck">"DebitCreditCode"</span>:             <span class="cv">"C"</span>,
+          <span class="ck">"AmountInTransactionCurrency"</span>: { <span class="ck">"currencyCode"</span>: <span class="cv">"THB"</span>, <span class="ck">"$value"</span>: <span class="cn">-600</span> }
+        }
+      ]
+    }
+  }
+}</pre>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">SOAP Response Structure (จาก S/4HANA)</div>
+          <div class="code-wrap">
+<pre class="code-block">{
+  <span class="ck">"JournalEntryCreateConfirmation"</span>: [    <span class="cc">// ← array</span>
+    {
+      <span class="ck">"JournalEntryCreateConfirmation"</span>: {
+        <span class="ck">"AccountingDocument"</span>: <span class="cv">"1000000012"</span>,   <span class="cc">// เลขเอกสาร FI (0000000000 = failed)</span>
+        <span class="ck">"CompanyCode"</span>: <span class="cv">"11AA"</span>,
+        <span class="ck">"FiscalYear"</span>:  <span class="cv">"2026"</span>
+      },
+      <span class="ck">"Log"</span>: {
+        <span class="ck">"MaximumLogItemSeverityCode"</span>: <span class="cv">"1"</span>,      <span class="cc">// 1=Success 2=Warning 3=Error</span>
+        <span class="ck">"Item"</span>: [
+          {
+            <span class="ck">"TypeID"</span>:       <span class="cv">"..."</span>,
+            <span class="ck">"SeverityCode"</span>: <span class="cv">"1"</span>,
+            <span class="ck">"Note"</span>:        <span class="cv">"Accounting document 1000000012 was posted"</span>
+          }
+        ]
+      }
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ERRORS ─────────────────────────────── -->
+  <div class="section" id="errors">
+    <div class="section-title">Error &amp; Troubleshoot</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">ERR</span>
+        <div style="flex:1">
+          <div class="endpoint-path">Error Cases ที่พบบ่อย</div>
+        </div>
+        <span class="chevron open">›</span>
+      </div>
+      <div class="card-body open">
+        <div class="card-section">
+          <table class="tbl">
+            <tr><th>Error</th><th>สาเหตุ</th><th>วิธีแก้</th></tr>
+            <tr>
+              <td><code>PSM_S4C_FM_AVC013</code></td>
+              <td>Budget ไม่พอใน Cost Center 11AA-30000 / Fund 11AA010003</td>
+              <td>เพิ่ม budget ใน S/4HANA Fiori App หรือเปลี่ยน Cost Center</td>
+            </tr>
+            <tr>
+              <td><code>AccountingDocument: "0000000000"</code></td>
+              <td>S/4HANA ไม่สร้างเอกสาร — มักเกิดจาก budget error หรือ config ผิด</td>
+              <td>ดู Log.Item ใน SOAP response เพื่อหา error จริง</td>
+            </tr>
+            <tr>
+              <td><code>Batch xxx: no items</code></td>
+              <td>Batch ไม่มี Items เลย</td>
+              <td>ตรวจสอบว่า import items ครบก่อน post FI</td>
+            </tr>
+            <tr>
+              <td><code>skipped: 1</code></td>
+              <td>Batch ถูก post ไปแล้ว (มี JournalEntryPosting อยู่แล้ว)</td>
+              <td>ปกติ — ไม่ใช่ error, ป้องกัน double-posting</td>
+            </tr>
+            <tr>
+              <td>HTTP 400</td>
+              <td>ไม่ส่ง batchId หรือ hisDocumentType+billDate</td>
+              <td>ตรวจ request body ให้ครบ</td>
+            </tr>
+            <tr>
+              <td>HTTP 404</td>
+              <td>batchId ไม่มีในระบบ</td>
+              <td>ตรวจ ID ที่ส่งมาใน GET /Batches ก่อน</td>
+            </tr>
+          </table>
+        </div>
+        <div class="card-section">
+          <div class="card-section-title">ดู CF Logs เพื่อ Debug SOAP</div>
+          <div class="code-wrap">
+<pre class="code-block"><span class="cc"># ดู log ล่าสุด</span>
+cf logs accounting-srv --recent
+
+<span class="cc"># กรองเฉพาะ s4h log</span>
+cf logs accounting-srv --recent | grep "\[s4h\]"</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOGIC ──────────────────────────────── -->
+  <div class="section" id="logic">
+    <div class="section-title">Logic ภายใน postFI</div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggle(this)">
+        <span class="method-pill" style="background:#f8f9fb;color:#475569;border:1px solid var(--border);">CODE</span>
+        <div style="flex:1">
+          <div class="endpoint-path">กฎสำคัญของ postFI handler</div>
+          <div class="endpoint-desc">srv/accounting-service.js</div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="card-body">
+        <div class="card-section">
+          <table class="tbl">
+            <tr><th>กฎ</th><th>รายละเอียด</th></tr>
+            <tr>
+              <td>ป้องกัน double-post</td>
+              <td>ตรวจ JournalEntryPostings ก่อน — ถ้ามีอยู่แล้ว skip ทันที</td>
+            </tr>
+            <tr>
+              <td>Group by billingGroup</td>
+              <td>Items ที่ billingGroup เดียวกัน รวมยอด netAmount → 1 Journal Entry — ถ้าไม่มี billingGroup ใช้ "DEFAULT"</td>
+            </tr>
+            <tr>
+              <td>SOAP outside DB transaction</td>
+              <td>เรียก S/4HANA SOAP ก่อน — ได้ผลสำเร็จแล้วค่อย insert ลง DB (ไม่ rollback SOAP)</td>
+            </tr>
+            <tr>
+              <td>Partial success</td>
+              <td>ถ้า group ใด SOAP fail → เก็บ error แต่ยัง post group อื่นต่อ</td>
+            </tr>
+            <tr>
+              <td>DocumentReferenceID</td>
+              <td>ใช้ accountingDocumentNumber ของ batch (ตัดให้ ≤16 chars) + "-" + seqNo ต่อ group</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+    Post FI Document Reference &nbsp;|&nbsp; SAP CAP Node.js v10 → S/4HANA Cloud my442293 &nbsp;|&nbsp; FIPOST_DOCUMENT.html
+  </div>
+
+</div>
+</div>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  if (!body || !chevron) return;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+
+function copyCode(btn) {
+  const pre = btn.nextElementSibling;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+document.querySelectorAll('.nav-item').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(l => l.style.opacity = '0.72');
+    link.style.opacity = '1';
+  });
+});
+</script>
+</body>
+</html>

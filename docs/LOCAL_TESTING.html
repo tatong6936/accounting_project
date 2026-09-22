@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Testing — Accounting CAP Service</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f6f8; color: #1a1a2e; line-height: 1.6; }
+
+  .header { background: #1a1a2e; color: #fff; padding: 2rem 2.5rem; }
+  .header h1 { font-size: 1.5rem; font-weight: 600; }
+  .header p { color: #8b9dc3; font-size: 0.875rem; margin-top: 0.25rem; }
+
+  .container { max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
+
+  .alert { background: #fff3cd; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: #78350f; }
+  .alert strong { display: block; margin-bottom: 0.25rem; }
+
+  .alert-danger { background: #fee2e2; border-color: #ef4444; color: #7f1d1d; }
+  .alert-success { background: #dcfce7; border-color: #22c55e; color: #14532d; }
+  .alert-info { background: #e0f2fe; border-color: #0ea5e9; color: #0c4a6e; }
+
+  .card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .card-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+  .card-num { background: #1a1a2e; color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+  .card-num.once { background: #7c3aed; }
+  .card-num.session { background: #0369a1; }
+  .card h2 { font-size: 1rem; font-weight: 600; }
+
+  pre { background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 0.9rem 1.1rem; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.82rem; overflow-x: auto; margin: 0.6rem 0; white-space: pre; }
+  code { font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0f172a; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 0.4rem; vertical-align: middle; }
+  .tag-once { background: #ede9fe; color: #5b21b6; }
+  .tag-session { background: #dbeafe; color: #1e40af; }
+
+  .step { margin: 0.6rem 0; padding-left: 1.1rem; border-left: 2px solid #e5e7eb; }
+  .step label { display: block; font-size: 0.875rem; color: #374151; font-weight: 500; margin-bottom: 0.25rem; }
+  .step p { font-size: 0.85rem; color: #6b7280; margin-bottom: 0.35rem; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.75rem; }
+  .status-item { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.65rem 0.8rem; text-align: center; }
+  .status-item .icon { font-size: 1.4rem; }
+  .status-item .label { font-size: 0.75rem; color: #374151; font-weight: 500; margin-top: 0.2rem; }
+  .status-item .check { font-size: 0.85rem; color: #16a34a; font-weight: 700; }
+
+  .file-warn { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #7c2d12; margin-top: 0.75rem; }
+  .file-warn ul { padding-left: 1.2rem; margin-top: 0.4rem; }
+  .file-warn li { margin: 0.2rem 0; }
+
+  .divider { border: none; border-top: 1px dashed #d1d5db; margin: 1.25rem 0; }
+
+  .terminal-label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: #6b7280; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green { background: #22c55e; }
+  .terminal-dots { display: flex; gap: 4px; }
+
+  h3 { font-size: 0.9rem; font-weight: 600; color: #374151; margin: 0.75rem 0 0.4rem; }
+
+  @media (max-width: 600px) {
+    .two-col { grid-template-columns: 1fr; }
+    .status-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Local Testing — Accounting CAP Service</h1>
+  <p>Test จาก localhost → BTP PostgreSQL จริง + S/4HANA SOAP จริง → FI Doc จริง</p>
+</div>
+
+<div class="container">
+
+  <div class="alert alert-warning">
+    <strong>⚠️ ต้องใช้ Network บ้าน / Hotspot เท่านั้น</strong>
+    Corporate network ปิด port 2222 (CF SSH) ทำให้ไม่สามารถเปิด tunnel ไปยัง BTP PostgreSQL ได้
+  </div>
+
+  <!-- ──────────── WHAT YOU GET ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:1.2rem">🎯</span>
+      <h2>สิ่งที่ได้จาก Local Testing</h2>
+    </div>
+    <div class="status-grid">
+      <div class="status-item">
+        <div class="icon">🗄️</div>
+        <div class="label">PostgreSQL BTP</div>
+        <div class="check">✅ ของจริง</div>
+      </div>
+      <div class="status-item">
+        <div class="icon">📡</div>
+        <div class="label">S/4HANA SOAP</div>
+        <div class="check">✅ ของจริง</div>
+      </div>
+      <div class="status-item">
+        <div class="icon">📄</div>
+        <div class="label">FI Document</div>
+        <div class="check">✅ เกิดจริง</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── ONE-TIME SETUP ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num once">★</span>
+      <h2>One-time Setup <span class="tag tag-once">ทำครั้งเดียว</span></h2>
+    </div>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:0.75rem">ทำครั้งแรกเท่านั้น ไม่ต้องทำซ้ำในแต่ละครั้งที่ test</p>
+
+    <div class="step">
+      <label>1. Login CF</label>
+      <pre>cf login -a https://api.cf.ap11.hana.ondemand.com</pre>
+    </div>
+
+    <div class="step">
+      <label>2. Enable SSH บน App</label>
+      <pre>cf enable-ssh accounting-srv</pre>
+    </div>
+
+    <div class="step">
+      <label>3. Restart App เพื่อให้ SSH มีผล</label>
+      <pre>cf restart accounting-srv</pre>
+    </div>
+
+    <div class="file-warn">
+      <strong>⚠️ ไฟล์ที่ต้องมีก่อน test (อย่า commit ไป git!)</strong>
+      <ul>
+        <li><code>accounting/.cdsrc-private.json</code> — DB credentials ผ่าน SSH tunnel</li>
+        <li><code>accounting/.env</code> — VCAP_SERVICES สำหรับ Destination service (S/4HANA SOAP)</li>
+      </ul>
+      ดูเนื้อหาไฟล์ที่ส่วน "Key Files" ด้านล่าง
+    </div>
+  </div>
+
+  <!-- ──────────── EVERY SESSION ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-num session">▶</span>
+      <h2>ทุกครั้งที่ต้องการ Test <span class="tag tag-session">ทุก session</span></h2>
+    </div>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:0.75rem">ต้องทำทั้ง 2 terminal พร้อมกัน (เปิด Terminal 1 ก่อน รอให้ tunnel พร้อม แล้วค่อยเปิด Terminal 2)</p>
+
+    <div class="two-col">
+      <div>
+        <div class="terminal-label">
+          <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          Terminal 1 — SSH Tunnel
+        </div>
+        <pre>cf ssh accounting-srv \
+  -L 15432:postgres-5c194fbb-6c66-47b4-aaa0-80860eccf804.capm0ncdfykh.ap-southeast-1.rds.amazonaws.com:5887</pre>
+        <p style="font-size:0.78rem;color:#6b7280;margin-top:0.3rem">เปิดทิ้งไว้ตลอด ไม่ต้องปิด — หยุด tunnel = cds serve หยุดเชื่อม DB</p>
+      </div>
+
+      <div>
+        <div class="terminal-label">
+          <div class="terminal-dots"><span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span></div>
+          Terminal 2 — CAP Server
+        </div>
+        <pre>cd accounting
+cds serve --profile hybrid</pre>
+        <p style="font-size:0.78rem;color:#6b7280;margin-top:0.3rem">เมื่อ log ขึ้น <em>"serving CdsService..."</em> แสดงว่าพร้อมแล้ว</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────── HOW TO TEST ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:1.2rem">🧪</span>
+      <h2>วิธีทดสอบ</h2>
+    </div>
+
+    <h3>ดู Batches ทั้งหมด</h3>
+    <pre>GET http://localhost:4004/odata/v4/accounting/Batches</pre>
+
+    <h3>เรียก postFI — แบบที่ 1: ส่ง batchId (1 batch)</h3>
+    <pre>POST http://localhost:4004/odata/v4/accounting/postFI
+Content-Type: application/json
+
+{
+  "batchId": "&lt;ใส่ batchId จริงจาก DB&gt;"
+}</pre>
+
+    <hr class="divider">
+
+    <h3>เรียก postFI — แบบที่ 2: ส่ง hisDocumentType + billDate (หลาย batch)</h3>
+    <pre>POST http://localhost:4004/odata/v4/accounting/postFI
+Content-Type: application/json
+
+{
+  "hisDocumentType": "RECEIPT_OPD",
+  "billDate": "2025-06-01"
+}</pre>
+
+    <div class="alert alert-info" style="margin-top:0.5rem">
+      <strong>📦 Package Size</strong>
+      ระบบจะดึง batch มาทำทีละ <code>100</code> รายการ วนจนกว่าจะหมด (เหมือน ABAP <code>SELECT ... PACKAGE SIZE 100</code>)<br>
+      ถ้าต้องการเปลี่ยนขนาด แก้ที่ <code>accounting/srv/accounting-service.js</code> บรรทัด <code>const PACKAGE_SIZE = 100</code>
+    </div>
+
+    <h3>ค่า hisDocumentType ที่ใช้ได้</h3>
+    <pre>INVOICE_OPD · INVOICE_IPD_INTERIM · INVOICE_IPD_FINAL
+RECEIPT_OPD · RECEIPT_IPD_INTERIM · RECEIPT_IPD_FINAL
+ONWARD · CREDIT_NOTE · DEBIT_NOTE · DEPOSIT · REFUND_DEPOSIT</pre>
+
+    <div class="alert alert-success" style="margin-top:0.75rem">
+      <strong>✅ ผลสำเร็จ</strong>
+      <code>"postFI done — processed: 3, skipped: 0, failed: 0, FI docs: 3"</code>
+    </div>
+
+    <div class="alert alert-danger" style="margin-top:0.5rem">
+      <strong>❌ ถ้า error — เช็ค:</strong>
+      <ul style="padding-left:1.2rem;margin-top:0.3rem;font-size:0.85rem">
+        <li>Terminal 1 ยังเปิดอยู่ไหม? (SSH tunnel)</li>
+        <li>ไฟล์ <code>.env</code> และ <code>.cdsrc-private.json</code> มีอยู่ไหม?</li>
+        <li>ใช้ Network บ้าน/Hotspot อยู่ไหม? (ไม่ใช่ VPN corporate)</li>
+        <li>Error message จะบันทึกลง <code>JournalEntryMessages</code> (msgType = <code>E</code>) และ <code>JournalEntryStatus = ERROR</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ──────────── KEY FILES ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:1.2rem">📁</span>
+      <h2>Key Files (อย่า commit!)</h2>
+    </div>
+
+    <h3>accounting/.cdsrc-private.json — DB via SSH tunnel</h3>
+    <pre>{
+  "requires": {
+    "[hybrid]": {
+      "db": {
+        "kind": "postgres",
+        "credentials": {
+          "host": "localhost",
+          "port": 15432,
+          "database": "wAKpenFgiGwb",
+          "user": "8f0721b09475",
+          "password": "da62b499f694fd6a",
+          "ssl": { "rejectUnauthorized": false }
+        }
+      }
+    }
+  }
+}</pre>
+
+    <hr class="divider">
+
+    <h3>accounting/.env — Destination service (สำหรับ SOAP call)</h3>
+    <pre>VCAP_SERVICES={"destination":[{"label":"destination","name":"accounting-destination",
+  "tags":["destination","conn","connsvc"],"credentials":{
+    "clientid":"sb-clonef942c0d900a64503ac8cb1c71de1e21d!b48002|destination-xsappname!b5",
+    "clientsecret":"8ee5a779-add7-459f-b1ea-85878ea0fc04$OAaAkQEQm80DNEqSn-rCBMaiDiHkYZ0HTkdmLDcf6J4=",
+    "url":"https://mid-market-demo-lbk0lgaq.authentication.ap11.hana.ondemand.com",
+    "uri":"https://destination-configuration.cfapps.ap11.hana.ondemand.com"}}]}</pre>
+
+    <div class="alert alert-danger" style="margin-top:0.75rem">
+      <strong>🔒 ห้าม commit ไฟล์เหล่านี้เด็ดขาด</strong>
+      ตรวจสอบว่ามี <code>.gitignore</code> ที่ครอบ <code>.env</code> และ <code>.cdsrc-private.json</code> แล้ว
+    </div>
+  </div>
+
+  <!-- ──────────── ARCHITECTURE ──────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:1.2rem">🏗️</span>
+      <h2>สรุป Architecture ของ Local Testing</h2>
+    </div>
+    <pre style="font-size:0.78rem">
+localhost:4004 (cds serve)
+   │
+   ├── DB queries ──→ localhost:15432 (SSH tunnel port)
+   │                        │
+   │                        └──→ CF container ──→ BTP PostgreSQL (AWS RDS ap-southeast-1) :5887
+   │
+   └── SOAP call ──→ S/4HANA (via Destination service)
+          │
+          ├── อ่าน credentials จาก VCAP_SERVICES (.env)
+          ├── ขอ token จาก UAA
+          ├── ดึง destination config (S4H_SOAP_DEST)
+          └── POST SOAP → JournalEntryCreateRequest → FI Document ✅
+    </pre>
+  </div>
+
+  <p style="font-size:0.78rem;color:#9ca3af;text-align:center;margin-top:1rem">
+    Accounting CAP Service — Local Testing Guide &nbsp;|&nbsp; อัปเดต: กันยายน 2026
+  </p>
+
+</div>
+</body>
+</html>

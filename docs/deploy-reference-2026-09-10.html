@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAP PostgreSQL BTP Deployment — Reference Document</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --accent: #0e7fc0;
+    --success: #1a7a4a;
+    --warning: #c17a00;
+    --danger: #b82f2f;
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --border: #d0dce8;
+    --code-bg: #1e2a38;
+    --code-fg: #c9d9e8;
+    --text: #1c2833;
+    --muted: #5d7080;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0e4f7a 100%);
+    color: #fff;
+    padding: 40px 48px 32px;
+  }
+  header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+  header .subtitle { opacity: .8; font-size: 1rem; }
+  header .meta { margin-top: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+  header .meta span {
+    background: rgba(255,255,255,.15);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: .85rem;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 36px 24px 60px; }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 36px;
+  }
+  .toc h2 { font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section ── */
+  section { margin-bottom: 40px; }
+  section h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  section h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 20px 0 8px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card.success { border-left: 4px solid #1a7a4a; }
+  .card.danger  { border-left: 4px solid var(--danger); }
+  .card.info    { border-left: 4px solid var(--accent); }
+  .card.warn    { border-left: 4px solid var(--warning); }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:680px){ .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ── Code ── */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: .86rem;
+    line-height: 1.6;
+    margin: 10px 0;
+  }
+  code {
+    background: #e4edf5;
+    color: #1a3a5c;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'Consolas', monospace;
+    font-size: .88em;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: .78rem;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .badge-green  { background: #d4edda; color: #155724; }
+  .badge-red    { background: #f8d7da; color: #721c24; }
+  .badge-blue   { background: #d1ecf1; color: #0c5460; }
+  .badge-yellow { background: #fff3cd; color: #856404; }
+  .badge-gray   { background: #e2e8ee; color: #3d5166; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th { background: var(--primary); color: #fff; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f0f5fb; }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item { position: relative; margin-bottom: 20px; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px; top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .timeline-item.done::before  { background: #1a7a4a; box-shadow: 0 0 0 2px #1a7a4a; }
+  .timeline-item.fail::before  { background: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+  .tl-label { font-weight: 600; font-size: .92rem; color: var(--primary); }
+  .tl-detail { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+
+  /* ── Highlight box ── */
+  .highlight {
+    background: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: .93rem;
+  }
+  .highlight strong { color: var(--primary); }
+
+  /* ── Step list ── */
+  .steps { counter-reset: step; }
+  .step {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .step::before {
+    content: counter(step);
+    min-width: 28px; height: 28px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .85rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Alert ── */
+  .alert {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: .92rem;
+  }
+  .alert-warn { background: #fff3cd; border: 1px solid #ffc107; }
+  .alert-info { background: #d1ecf1; border: 1px solid #bee5eb; }
+  .alert-success { background: #d4edda; border: 1px solid #c3e6cb; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: .82rem;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CAP Node.js + PostgreSQL บน BTP Cloud Foundry</h1>
+  <div class="subtitle">Hospital Accounting Service — Deployment Reference Document</div>
+  <div class="meta">
+    <span>📅 10 กันยายน 2569</span>
+    <span>🏥 Project: accounting</span>
+    <span>☁️ BTP Space: DEMO / ap11</span>
+    <span>✅ Status: Deploy สำเร็จ</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>สารบัญ</h2>
+    <ol>
+      <li><a href="#overview">ภาพรวม Architecture</a></li>
+      <li><a href="#files">ไฟล์สำคัญในโปรเจค</a></li>
+      <li><a href="#schema-deploy">Schema Deployment — ปัญหาและวิธีแก้</a></li>
+      <li><a href="#db-connect">DB Connection Fix — server.js</a></li>
+      <li><a href="#api-test">การทดสอบ API</a></li>
+      <li><a href="#ghost-service">Ghost Service Error (Known Issue)</a></li>
+      <li><a href="#commands">คำสั่งที่ใช้บ่อย</a></li>
+      <li><a href="#lessons">บทเรียนสำคัญ</a></li>
+      <li><a href="#next">ขั้นตอนครั้งหน้า</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Overview -->
+  <section id="overview">
+    <h2>1. ภาพรวม Architecture</h2>
+    <div class="grid-2">
+      <div class="card info">
+        <h3>Stack</h3>
+        <table>
+          <tr><td><strong>Framework</strong></td><td>SAP CAP Node.js v10.1.0</td></tr>
+          <tr><td><strong>Language</strong></td><td>ES Module (<code>"type":"module"</code>)</td></tr>
+          <tr><td><strong>DB Adapter</strong></td><td><code>@cap-js/postgres</code> v3</td></tr>
+          <tr><td><strong>Auth</strong></td><td>XSUAA (client_credentials)</td></tr>
+          <tr><td><strong>Node.js</strong></td><td>24.18.0</td></tr>
+          <tr><td><strong>Buildpack</strong></td><td>nodejs_buildpack 1.9.3</td></tr>
+        </table>
+      </div>
+      <div class="card info">
+        <h3>BTP Services</h3>
+        <table>
+          <tr><td><strong>PostgreSQL</strong></td><td>postgresql-db (free plan)</td></tr>
+          <tr><td><strong>Instance name</strong></td><td>my-cap-postgres-db</td></tr>
+          <tr><td><strong>Region</strong></td><td>ap-southeast-1 (AWS RDS)</td></tr>
+          <tr><td><strong>Port</strong></td><td>5887 (non-standard)</td></tr>
+          <tr><td><strong>SSL</strong></td><td>Required (rejectUnauthorized: false)</td></tr>
+          <tr><td><strong>XSUAA</strong></td><td>accounting-auth (application plan)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>App URL</h3>
+      <code>https://it-one-co--ltd-mid-market-demo-demo-accounting-srv.cfapps.ap11.hana.ondemand.com</code>
+      <h3 style="margin-top:14px">Endpoints</h3>
+      <table>
+        <tr><th>Method</th><th>Path</th><th>คำอธิบาย</th></tr>
+        <tr><td><span class="badge badge-blue">POST</span></td><td><code>/odata/v4/accounting/import</code></td><td>Import batches (action)</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/odata/v4/accounting/Batches</code></td><td>ดู batch ทั้งหมด</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/odata/v4/accounting/Items</code></td><td>ดู items ทั้งหมด</td></tr>
+        <tr><td><span class="badge badge-green">GET</span></td><td><code>/odata/v4/accounting/Payments</code></td><td>ดู payments ทั้งหมด</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Data Model</h3>
+      <table>
+        <tr><th>Entity</th><th>ความสัมพันธ์</th><th>ตาราง PostgreSQL</th></tr>
+        <tr><td>Batches</td><td>Root entity</td><td><code>com_hospital_accounting_Batches</code></td></tr>
+        <tr><td>Items</td><td>Composition of Batches</td><td><code>com_hospital_accounting_Items</code></td></tr>
+        <tr><td>Payments</td><td>Composition of Batches</td><td><code>com_hospital_accounting_Payments</code></td></tr>
+      </table>
+      <p style="margin-top:10px;font-size:.88rem;color:var(--muted)">Namespace: <code>com.hospital.accounting</code> | Schema file: <code>db/schema.cds</code></p>
+    </div>
+  </section>
+
+  <!-- 2. Files -->
+  <section id="files">
+    <h2>2. ไฟล์สำคัญในโปรเจค</h2>
+    <table>
+      <tr><th>ไฟล์</th><th>บทบาท</th><th>หมายเหตุ</th></tr>
+      <tr>
+        <td><code>db/schema.cds</code></td>
+        <td>Data model + Enums</td>
+        <td>HisDocumentType, PaymentMethod, BankCode</td>
+      </tr>
+      <tr>
+        <td><code>srv/accounting-service.cds</code></td>
+        <td>Service definition + action import</td>
+        <td>BatchInput, ItemInput, PaymentInput types</td>
+      </tr>
+      <tr>
+        <td><code>srv/accounting-service.js</code></td>
+        <td>Service handler (ESM)</td>
+        <td>Transaction insert: Batches → Items → Payments</td>
+      </tr>
+      <tr>
+        <td><code>srv/deploy-db.cjs</code></td>
+        <td><strong>Schema deploy script</strong></td>
+        <td>CJS format, ใช้ pg.Pool + type mapping</td>
+      </tr>
+      <tr>
+        <td><code>server.js</code> (root)</td>
+        <td><strong>Custom CDS bootstrap</strong></td>
+        <td>Inject PostgreSQL credentials จาก VCAP_SERVICES</td>
+      </tr>
+      <tr>
+        <td><code>gen/srv/server.js</code></td>
+        <td>ไฟล์เดียวกัน (build output)</td>
+        <td>CDS load ไฟล์นี้เมื่อ start</td>
+      </tr>
+      <tr>
+        <td><code>package.json</code></td>
+        <td>CDS config + dependencies</td>
+        <td><code>[production]: { auth: "xsuaa", db: { kind: "postgres", vcap: {...} } }</code></td>
+      </tr>
+      <tr>
+        <td><code>mta.yaml</code></td>
+        <td>MTA deployment descriptor</td>
+        <td>copy server.js step อยู่ใน before-all commands</td>
+      </tr>
+      <tr>
+        <td><code>xs-security.json</code></td>
+        <td>XSUAA config</td>
+        <td>xsappname: accounting-demo, tenant-mode: dedicated</td>
+      </tr>
+    </table>
+  </section>
+
+  <!-- 3. Schema Deploy -->
+  <section id="schema-deploy">
+    <h2>3. Schema Deployment — ปัญหาและวิธีแก้ (9 Iterations)</h2>
+
+    <div class="alert alert-info">
+      <strong>คำสั่งที่ใช้:</strong>
+      <code>cf run-task accounting-srv --command "node srv/deploy-db.cjs" --name "deploy-schema-N"</code>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item fail">
+        <div class="tl-label">Iteration 1-2: <code>cds.deploy()</code> delta path — DROP TABLE blocked</div>
+        <div class="tl-detail">Error: <code>"Dropping tables not supported (in artifact: com.demo.timesheet.Projects)"</code><br>
+        สาเหตุ: DB มีตารางเก่าจาก project อื่น (timesheet) CDS delta migration ไม่ยอม DROP foreign tables</div>
+      </div>
+
+      <div class="timeline-item fail">
+        <div class="tl-label">Iteration 3-5: DROP ด้วย pg.Pool แล้วค่อย cds.deploy()</div>
+        <div class="tl-detail">DROP สำเร็จ แต่ cds.deploy() ใช้ fresh install path → Error: <code>type "nvarchar" does not exist</code><br>
+        สาเหตุ: CDS fresh path ออก SQLite-specific DDL types (NVARCHAR, DATE_TEXT, TIMESTAMP_TEXT, NCLOB ฯลฯ)</div>
+      </div>
+
+      <div class="timeline-item fail">
+        <div class="tl-label">Iteration 6-8: cds.compile.to.sql() + regex type mapping</div>
+        <div class="tl-detail">เพิ่ม type mapping ทีละตัว: NVARCHAR→VARCHAR, TIMESTAMP_TEXT→TIMESTAMP, TIME_TEXT→TIME, NCLOB→TEXT<br>
+        แต่ยังขาด SMALLDECIMAL, NBINARY, VARBINARY, BINARY_FLOAT, BINARY_DOUBLE, NDOUBLE, NFLOAT, NBLOB, NLONGSTRING</div>
+      </div>
+
+      <div class="timeline-item done">
+        <div class="tl-label">Iteration 9: ✅ สำเร็จ — Created 7 database objects</div>
+        <div class="tl-detail">เพิ่ม comprehensive type mapping ครบทุก CDS SQLite type alias<br>
+        เวลา: 17:17:41 — <code>Schema deployed successfully!</code></div>
+      </div>
+    </div>
+
+    <h3>Solution สุดท้าย: deploy-db.cjs</h3>
+    <div class="highlight">
+      <strong>Logic หลัก:</strong>
+      <ol style="margin-top:8px;padding-left:20px">
+        <li>อ่าน VCAP_SERVICES หา PostgreSQL credentials + SSL config</li>
+        <li>DROP ทุก table ที่ไม่ใช่ <code>com_hospital_accounting%</code> ด้วย <code>pg.Pool</code></li>
+        <li>โหลด model: <code>cds.compile.to.sql(model)</code></li>
+        <li>แปลง SQLite types → PostgreSQL types ด้วย regex (<code>toPostgresSQL()</code>)</li>
+        <li>Execute DDL ผ่าน <code>pg.Pool</code> โดยตรง + <code>CREATE TABLE IF NOT EXISTS</code></li>
+      </ol>
+    </div>
+
+    <h3>CDS SQLite Type → PostgreSQL Type Mapping</h3>
+    <table>
+      <tr><th>CDS SQLite Type</th><th>PostgreSQL Type</th></tr>
+      <tr><td><code>NVARCHAR(n)</code></td><td><code>VARCHAR(n)</code></td></tr>
+      <tr><td><code>NVARCHAR</code></td><td><code>TEXT</code></td></tr>
+      <tr><td><code>TIMESTAMP_TEXT</code></td><td><code>TIMESTAMP</code></td></tr>
+      <tr><td><code>TIME_TEXT</code></td><td><code>TIME</code></td></tr>
+      <tr><td><code>DATE_TEXT</code></td><td><code>DATE</code></td></tr>
+      <tr><td><code>REAL_DECIMAL(p,s)</code></td><td><code>DECIMAL(p,s)</code></td></tr>
+      <tr><td><code>REAL_DECIMAL</code></td><td><code>DECIMAL</code></td></tr>
+      <tr><td><code>SMALLDECIMAL</code></td><td><code>NUMERIC</code></td></tr>
+      <tr><td><code>NBINARY(n)</code> / <code>VARBINARY(n)</code></td><td><code>BYTEA</code></td></tr>
+      <tr><td><code>BINARY_FLOAT</code> / <code>NFLOAT</code></td><td><code>REAL</code></td></tr>
+      <tr><td><code>BINARY_DOUBLE</code> / <code>NDOUBLE</code></td><td><code>DOUBLE PRECISION</code></td></tr>
+      <tr><td><code>NBLOB</code> / <code>BLOB</code></td><td><code>BYTEA</code></td></tr>
+      <tr><td><code>NCLOB</code> / <code>CLOB</code> / <code>NLONGSTRING</code></td><td><code>TEXT</code></td></tr>
+    </table>
+
+    <div class="alert alert-warn" style="margin-top:16px">
+      <strong>⚠️ ทำไมไม่ใช้ cds.deploy() ตรงๆ</strong><br>
+      — Delta path: บล็อก DROP TABLE ของ foreign schemas<br>
+      — Fresh path (ไม่มี cds_model table): ออก SQLite DDL types ที่ PostgreSQL ไม่รู้จัก<br>
+      → ต้อง bypass ด้วย <code>cds.compile.to.sql()</code> + type mapping + <code>pg.Pool</code>
+    </div>
+  </section>
+
+  <!-- 4. DB Connection -->
+  <section id="db-connect">
+    <h2>4. DB Connection Fix — server.js</h2>
+
+    <div class="card danger">
+      <h3>ปัญหา: ECONNREFUSED 127.0.0.1:5432</h3>
+      <p>แม้ add <code>"db": "postgres"</code> และ <code>"vcap": { "label": "postgresql-db" }</code> ใน <code>package.json</code> แล้ว CDS 10 ยังคง connect localhost เพราะ VCAP_SERVICES auto-discovery ทำงานตาม <code>kind</code> name vs VCAP label/tag:</p>
+      <ul style="margin-top:8px;padding-left:20px">
+        <li>kind: <code>"postgres"</code> → หา VCAP label <code>"postgres"</code> → ไม่เจอ (label จริงคือ <code>"postgresql-db"</code>)</li>
+        <li>VCAP tags: <code>["relational", "database"]</code> → ไม่มี <code>"postgres"</code></li>
+      </ul>
+    </div>
+
+    <div class="card success">
+      <h3>✅ Solution: Custom server.js</h3>
+      <p>CDS โหลด <code>server.js</code> ที่ root ของ app ก่อน bootstrap จึง inject credentials ตรงๆ:</p>
+      <pre><code>import cds from '@sap/cds';
+
+if (process.env.VCAP_SERVICES) {
+    const vcap = JSON.parse(process.env.VCAP_SERVICES);
+    const pgSvc = Object.values(vcap).flat()
+        .find(s => s.credentials && (s.credentials.hostname || s.credentials.host));
+    if (pgSvc) {
+        const c = pgSvc.credentials;
+        cds.env.requires ??= {};
+        cds.env.requires.db ??= {};
+        cds.env.requires.db.credentials = {
+            host: c.hostname || c.host,
+            port: parseInt(c.port) || 5432,
+            user: c.username || c.user,
+            password: c.password,
+            database: c.dbname || c.database,
+            ssl: { rejectUnauthorized: false }
+        };
+    }
+}
+
+export default cds.server;</code></pre>
+      <p style="margin-top:10px"><strong>ผลลัพธ์ใน log:</strong></p>
+      <pre><code>[cds] - bootstrapping from { file: 'server.js' }
+[server.js] PostgreSQL credentials injected from VCAP_SERVICES (postgres-5c194fbb-...:5887)
+connect to db > postgres { host: 'postgres-5c194fbb-...', port: 5887, ... }</code></pre>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>⚠️ สำคัญ:</strong> <code>server.js</code> ต้องอยู่ที่ root ของ deployed app (<code>gen/srv/server.js</code>)<br>
+      <code>mta.yaml</code> build step จะ copy จาก source root ให้อัตโนมัติ:
+      <pre style="margin-top:8px;background:#fff3cd;color:#856404;padding:10px"><code>- node -e "require('fs').copyFileSync('server.js','gen/srv/server.js')"</code></pre>
+    </div>
+
+    <div class="alert alert-info">
+      <strong>ข้อดีของ approach นี้:</strong> credentials อ่านจาก VCAP_SERVICES ทุกครั้งที่ start → ทำงานถูกต้องแม้ rebind service (username/password เปลี่ยน)
+    </div>
+  </section>
+
+  <!-- 5. API Test -->
+  <section id="api-test">
+    <h2>5. การทดสอบ API</h2>
+
+    <h3>Step 1: ขอ Bearer Token จาก XSUAA</h3>
+    <div class="card">
+      <table>
+        <tr><td><strong>Method</strong></td><td>POST</td></tr>
+        <tr><td><strong>URL</strong></td><td><code>https://mid-market-demo-lbk0lgaq.authentication.ap11.hana.ondemand.com/oauth/token</code></td></tr>
+        <tr><td><strong>Body type</strong></td><td>x-www-form-urlencoded</td></tr>
+        <tr><td><strong>grant_type</strong></td><td>client_credentials</td></tr>
+        <tr><td><strong>client_id</strong></td><td><code>sb-accounting-demo!t48002</code></td></tr>
+        <tr><td><strong>client_secret</strong></td><td>ดูจาก <code>cf env accounting-srv</code> → xsuaa → clientsecret</td></tr>
+      </table>
+      <div class="alert alert-warn" style="margin-top:12px">
+        <strong>⚠️</strong> <code>clientsecret</code> เปลี่ยนทุกครั้งที่ <code>cf deploy</code> (rebind service) — ต้องดูค่าใหม่จาก <code>cf env</code> เสมอ
+      </div>
+    </div>
+
+    <h3>Step 2: POST /import</h3>
+    <div class="card">
+      <table style="margin-bottom:12px">
+        <tr><td><strong>Method</strong></td><td>POST</td></tr>
+        <tr><td><strong>URL</strong></td><td><code>https://...cfapps.ap11.hana.ondemand.com/odata/v4/accounting/import</code></td></tr>
+        <tr><td><strong>Authorization</strong></td><td>Bearer &lt;access_token&gt;</td></tr>
+        <tr><td><strong>Content-Type</strong></td><td>application/json</td></tr>
+      </table>
+      <strong>Sample Payload:</strong>
+      <pre><code>{
+  "batches": [
+    {
+      "hisDocumentType": "RECEIPT_OPD",
+      "hospitalCode": "H001",
+      "accountingDocumentNumber": "RCP-2026-00001",
+      "billDate": "2026-09-10",
+      "cashierUsername": "cashier01",
+      "currency": "THB",
+      "hospitalNumber": "HN-12345",
+      "visitNumber": "VN-2026-001",
+      "payorCode": "SELF",
+      "items": [
+        {
+          "itemNumber": 1,
+          "itemCode": "MED-001",
+          "itemName": "Paracetamol 500mg",
+          "totalAmount": 150.00,
+          "discountAmount": 0.00,
+          "netAmount": 150.00,
+          "taxAmount": 0.00,
+          "quantity": 2.000,
+          "unitOfMeasure": "TAB"
+        }
+      ],
+      "payments": [
+        {
+          "paymentRunningNumber": 1,
+          "paymentMethod": "CASH",
+          "paymentAmount": 150.00
+        }
+      ]
+    }
+  ]
+}</code></pre>
+      <div class="alert alert-success" style="margin-top:10px">
+        <strong>Expected Response (200 OK):</strong>
+        <pre style="background:#d4edda;color:#155724;margin-top:6px;padding:10px"><code>{ "@odata.context": "$metadata#Edm.String", "value": "Imported 1 batch(es) successfully" }</code></pre>
+      </div>
+    </div>
+
+    <h3>Enum Values ที่ใช้ได้</h3>
+    <div class="grid-2">
+      <div class="card">
+        <strong>HisDocumentType</strong>
+        <pre style="margin-top:8px;font-size:.82rem"><code>INVOICE_OPD       INVOICE_IPD_INTERIM
+INVOICE_IPD_FINAL RECEIPT_OPD
+RECEIPT_IPD_INTERIM RECEIPT_IPD_FINAL
+ONWARD            CREDIT_NOTE
+DEBIT_NOTE        DEPOSIT
+REFUND_DEPOSIT</code></pre>
+      </div>
+      <div class="card">
+        <strong>PaymentMethod</strong>
+        <pre style="margin-top:8px;font-size:.82rem"><code>CASH    TRANSFER
+EDC     QR
+VOUCHER DEPOSIT</code></pre>
+        <strong style="display:block;margin-top:10px">BankCode</strong>
+        <pre style="font-size:.82rem"><code>BBL KBANK KTB TTB SCB BAY
+KKP CIMBT TISCO UOBT TCD
+LHFG ICBCT SME BAAC EXIM
+GSB GHB</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Ghost Service -->
+  <section id="ghost-service">
+    <h2>6. Ghost Service Error (Known Issue)</h2>
+    <div class="card warn">
+      <h3>Error ที่เห็นทุกครั้งที่ cf deploy</h3>
+      <pre><code>Error detaching services from MTA:
+CF-ServiceInstanceNotFound(60004): The service instance could not be found: accounting-db</code></pre>
+      <p style="margin-top:10px"><strong>สาเหตุ:</strong> MTA deployment ครั้งแรกลงทะเบียน managed service ชื่อ <code>accounting-db</code> แต่ต่อมาเปลี่ยนเป็น <code>accounting-postgres</code> (existing service) ใน mta.yaml — MTA deployer จึงพยายาม detach service เก่าที่ไม่มีอยู่แล้ว</p>
+      <p style="margin-top:8px"><strong>ผลกระทบ:</strong> ไม่กระทบการทำงานของ app — app start สำเร็จก่อน error นี้จะเกิด</p>
+      <div class="alert alert-info" style="margin-top:10px">
+        <strong>Workaround:</strong> หลัง app start สำเร็จ abort process ด้วย:<br>
+        <code>cf deploy -i &lt;operation-id&gt; -a abort</code>
+      </div>
+      <div class="alert alert-warn" style="margin-top:8px">
+        <strong>วิธีแก้ถาวร (ยังไม่ได้ทำ):</strong> ลบ ghost MTA reference ออกจาก BTP cockpit หรือใช้ <code>cf undeploy accounting --delete-services</code> แล้ว deploy ใหม่ทั้งหมด
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Commands -->
+  <section id="commands">
+    <h2>7. คำสั่งที่ใช้บ่อย</h2>
+
+    <h3>Deploy App (วิธีเร็ว — แนะนำ)</h3>
+    <div class="steps">
+      <div class="step">
+        <div>
+          Build CDS model
+          <pre><code>npx cds build --production</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          Push app โดยตรง (ข้าม MBT + ghost service error)
+          <pre><code>cf push accounting-srv -p gen/srv -b nodejs_buildpack</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <h3>Deploy App (วิธี Full MTA)</h3>
+    <div class="steps">
+      <div class="step"><div>
+        <pre><code>npx cds build --production</code></pre>
+      </div></div>
+      <div class="step"><div>
+        <pre><code>mbt build -t mta_archives</code></pre>
+      </div></div>
+      <div class="step"><div>
+        <pre><code>cf deploy mta_archives/accounting_1.0.0.mtar</code></pre>
+        หาก ghost service error: <code>cf deploy -i &lt;id&gt; -a abort</code>
+      </div></div>
+    </div>
+
+    <h3>Deploy Schema (หลัง deploy app หรือเมื่อ DB binding เปลี่ยน)</h3>
+    <pre><code>cf run-task accounting-srv --command "node srv/deploy-db.cjs" --name "deploy-schema-N"</code></pre>
+    <p style="font-size:.88rem;color:var(--muted);margin-top:4px">ตรวจ log: <code>cf logs accounting-srv --recent</code> → หา <code>Schema deployed successfully!</code></p>
+
+    <h3>ดู Credentials ปัจจุบัน (หลัง rebind)</h3>
+    <pre><code>cf env accounting-srv</code></pre>
+    <p style="font-size:.88rem;color:var(--muted);margin-top:4px">ดู xsuaa → <code>clientsecret</code> (เปลี่ยนทุก deploy) และ postgresql-db → credentials</p>
+
+    <h3>ดู App Logs</h3>
+    <pre><code>cf logs accounting-srv --recent
+cf logs accounting-srv                  # streaming (real-time)</code></pre>
+
+    <h3>ดู App Status</h3>
+    <pre><code>cf app accounting-srv</code></pre>
+
+    <h3>PowerShell — รันคำสั่ง CF หลายอัน</h3>
+    <div class="alert alert-warn">
+      <strong>⚠️ PowerShell 5.1 ไม่รองรับ <code>&amp;&amp;</code></strong> — ต้องรันแยกทีละคำสั่ง หรือใช้ <code>;</code> (แต่ไม่ stop on error)
+    </div>
+  </section>
+
+  <!-- 8. Lessons -->
+  <section id="lessons">
+    <h2>8. บทเรียนสำคัญ</h2>
+
+    <div class="grid-2">
+      <div class="card danger">
+        <h3>❌ อย่าทำ</h3>
+        <ul style="padding-left:18px;margin-top:8px">
+          <li>ใช้ <code>cds.deploy()</code> กับ PostgreSQL ที่มี foreign tables → ติด DROP TABLE safety</li>
+          <li>ใช้ <code>cds.deploy()</code> fresh path → ได้ SQLite DDL types</li>
+          <li>พึ่ง VCAP_SERVICES auto-discovery ของ CDS เมื่อ service label ไม่ตรง kind</li>
+          <li>รัน <code>cd path &amp;&amp; command</code> ใน PowerShell 5.1</li>
+          <li>ใช้ token เก่าหลัง cf deploy (clientsecret เปลี่ยน)</li>
+        </ul>
+      </div>
+      <div class="card success">
+        <h3>✅ ควรทำ</h3>
+        <ul style="padding-left:18px;margin-top:8px">
+          <li>ใช้ <code>cds.compile.to.sql()</code> + regex type mapping + <code>pg.Pool</code></li>
+          <li>สร้าง <code>server.js</code> inject credentials จาก VCAP_SERVICES</li>
+          <li>ใช้ <code>cf push -p gen/srv</code> แทน MBT เมื่อแก้แค่ code</li>
+          <li>ตรวจ <code>cf env</code> หลัง deploy เพื่อดู clientsecret ใหม่</li>
+          <li>ตรวจ log <code>--recent</code> ก่อน test API</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Key Insight: ES Module vs CommonJS ใน CAP</h3>
+      <table>
+        <tr><th>ไฟล์</th><th>Module System</th><th>เหตุผล</th></tr>
+        <tr><td><code>accounting-service.js</code></td><td>ESM (<code>import/export</code>)</td><td>package.json มี <code>"type":"module"</code></td></tr>
+        <tr><td><code>deploy-db.cjs</code></td><td>CommonJS (<code>require()</code>)</td><td>นามสกุล <code>.cjs</code> บังคับ CJS แม้ใน ESM package</td></tr>
+        <tr><td><code>server.js</code></td><td>ESM (<code>import/export</code>)</td><td>ต้องตรงกับ package type</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>BTP PostgreSQL Hyperscaler — ข้อควรรู้</h3>
+      <ul style="padding-left:18px">
+        <li>Port ไม่ใช่ 5432 แต่เป็น <strong>5887</strong></li>
+        <li>SSL จำเป็น — ใช้ <code>ssl: { rejectUnauthorized: false }</code></li>
+        <li>ทุกครั้งที่ rebind service (cf deploy): <strong>username + password เปลี่ยนใหม่</strong></li>
+        <li>VCAP_SERVICES label คือ <code>"postgresql-db"</code> (ไม่ใช่ <code>"postgres"</code>) → ทำให้ CDS auto-discovery ล้มเหลว</li>
+        <li>Table ที่ user เก่าสร้าง — user ใหม่อาจเข้าถึงได้ (BTP grant by default) แต่ถ้ามีปัญหา redeploy schema ด้วย user ใหม่</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 9. Next Steps -->
+  <section id="next">
+    <h2>9. ขั้นตอนครั้งหน้า (Optional)</h2>
+    <div class="grid-2">
+      <div class="card warn">
+        <h3>🔧 แก้ Ghost Service Error (ถาวร)</h3>
+        <p>ลบ MTA reference ของ <code>accounting-db</code> เก่าออก อาจต้องใช้:</p>
+        <pre><code>cf undeploy accounting --delete-services</code></pre>
+        <p style="font-size:.85rem;color:var(--muted)">⚠️ ระวัง: จะลบ services ทั้งหมด ต้องวางแผนก่อน</p>
+      </div>
+      <div class="card info">
+        <h3>📋 เพิ่ม Error Handling</h3>
+        <ul style="padding-left:18px">
+          <li>Validate enum values ก่อน insert</li>
+          <li>Handle duplicate accountingDocumentNumber</li>
+          <li>Add retry logic สำหรับ DB connection</li>
+        </ul>
+      </div>
+      <div class="card info">
+        <h3>🔐 Security</h3>
+        <ul style="padding-left:18px">
+          <li>เพิ่ม scope ใน xs-security.json</li>
+          <li>ใช้ x509 credential type แทน binding-secret</li>
+          <li>Set up instance-based authorization</li>
+        </ul>
+      </div>
+      <div class="card info">
+        <h3>⬆️ Stack Migration</h3>
+        <ul style="padding-left:18px">
+          <li>Migrate จาก <code>cflinuxfs4</code> → <code>cflinuxfs5</code><br>
+          <span style="font-size:.82rem;color:var(--muted)">cflinuxfs4 deprecated, ends May 2027</span></li>
+          <li>เพิ่ม <code>stack: cflinuxfs5</code> ใน mta.yaml</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  เอกสารอ้างอิงนี้จัดทำเมื่อวันที่ 10 กันยายน 2569 | CAP Node.js v10.1.0 | @cap-js/postgres v3 | BTP Cloud Foundry ap11
+</footer>
+
+</body>
+</html>

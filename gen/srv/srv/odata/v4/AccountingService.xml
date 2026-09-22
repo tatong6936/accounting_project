@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+    <edmx:Include Alias="Common" Namespace="com.sap.vocabularies.Common.v1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Core.V1.xml">
+    <edmx:Include Alias="Core" Namespace="Org.OData.Core.V1"/>
+  </edmx:Reference>
+  <edmx:Reference Uri="https://oasis-tcs.github.io/odata-vocabularies/vocabularies/Org.OData.Validation.V1.xml">
+    <edmx:Include Alias="Validation" Namespace="Org.OData.Validation.V1"/>
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace="AccountingService" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <Annotation Term="Core.Links">
+        <Collection>
+          <Record>
+            <PropertyValue Property="rel" String="author"/>
+            <PropertyValue Property="href" String="https://cap.cloud.sap"/>
+          </Record>
+        </Collection>
+      </Annotation>
+      <EntityContainer Name="EntityContainer">
+        <EntitySet Name="Batches" EntityType="AccountingService.Batches">
+          <NavigationPropertyBinding Path="items" Target="Items"/>
+          <NavigationPropertyBinding Path="payments" Target="Payments"/>
+          <NavigationPropertyBinding Path="journalEntryPostings" Target="JournalEntryPostings"/>
+        </EntitySet>
+        <EntitySet Name="Items" EntityType="AccountingService.Items">
+          <NavigationPropertyBinding Path="batch" Target="Batches"/>
+          <NavigationPropertyBinding Path="fiPosting" Target="JournalEntryPostings"/>
+        </EntitySet>
+        <EntitySet Name="Payments" EntityType="AccountingService.Payments">
+          <NavigationPropertyBinding Path="batch" Target="Batches"/>
+        </EntitySet>
+        <EntitySet Name="JournalEntryPostings" EntityType="AccountingService.JournalEntryPostings">
+          <NavigationPropertyBinding Path="batch" Target="Batches"/>
+          <NavigationPropertyBinding Path="messages" Target="JournalEntryMessages"/>
+        </EntitySet>
+        <EntitySet Name="JournalEntryMessages" EntityType="AccountingService.JournalEntryMessages">
+          <NavigationPropertyBinding Path="journalEntryPosting" Target="JournalEntryPostings"/>
+        </EntitySet>
+        <ActionImport Name="import" Action="AccountingService.import"/>
+        <ActionImport Name="postFI" Action="AccountingService.postFI"/>
+      </EntityContainer>
+      <EntityType Name="Batches">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="hisDocumentType" Type="Edm.String" MaxLength="25" Nullable="false"/>
+        <Property Name="hospitalCode" Type="Edm.String" MaxLength="20" Nullable="false"/>
+        <Property Name="accountingDocumentNumber" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <Property Name="billDate" Type="Edm.Date" Nullable="false"/>
+        <Property Name="cashierUsername" Type="Edm.String" MaxLength="100" Nullable="false"/>
+        <Property Name="currency" Type="Edm.String" MaxLength="3" Nullable="false"/>
+        <Property Name="hospitalNumber" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <Property Name="visitNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="payorCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="oneTimePayorName1" Type="Edm.String" MaxLength="200"/>
+        <Property Name="oneTimePayorName2" Type="Edm.String" MaxLength="200"/>
+        <Property Name="coverageType" Type="Edm.String" MaxLength="50"/>
+        <Property Name="patientGroup" Type="Edm.String" MaxLength="50"/>
+        <Property Name="marketChannel" Type="Edm.String" MaxLength="50"/>
+        <Property Name="referenceAccountingDocumentNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="discountHeaderAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="roundOffAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="isCancel" Type="Edm.Boolean"/>
+        <NavigationProperty Name="items" Type="Collection(AccountingService.Items)" Partner="batch">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="payments" Type="Collection(AccountingService.Payments)" Partner="batch">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+        <NavigationProperty Name="journalEntryPostings" Type="Collection(AccountingService.JournalEntryPostings)" Partner="batch">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="Items">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <NavigationProperty Name="batch" Type="AccountingService.Batches" Nullable="false" Partner="items">
+          <ReferentialConstraint Property="batch_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="batch_ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="itemNumber" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="itemCode" Type="Edm.String" MaxLength="50" Nullable="false"/>
+        <Property Name="itemName" Type="Edm.String" MaxLength="200" Nullable="false"/>
+        <Property Name="packageCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="totalAmount" Type="Edm.Decimal" Precision="15" Scale="2" Nullable="false"/>
+        <Property Name="discountAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="netAmount" Type="Edm.Decimal" Precision="15" Scale="2" Nullable="false"/>
+        <Property Name="taxAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="taxCode" Type="Edm.String" MaxLength="20"/>
+        <Property Name="requestingDepartmentCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="performingDepartmentCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="doctorCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="doctorName" Type="Edm.String" MaxLength="200"/>
+        <Property Name="quantity" Type="Edm.Decimal" Precision="10" Scale="3" Nullable="false"/>
+        <Property Name="unitOfMeasure" Type="Edm.String" MaxLength="20"/>
+        <Property Name="patientType" Type="Edm.String" MaxLength="20"/>
+        <Property Name="orderCategory" Type="Edm.String" MaxLength="50"/>
+        <Property Name="orderSubCategory" Type="Edm.String" MaxLength="50"/>
+        <Property Name="billingGroup" Type="Edm.String" MaxLength="50"/>
+        <Property Name="billingSubGroup" Type="Edm.String" MaxLength="50"/>
+        <NavigationProperty Name="fiPosting" Type="AccountingService.JournalEntryPostings">
+          <ReferentialConstraint Property="fiPosting_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="fiPosting_ID" Type="Edm.Guid"/>
+      </EntityType>
+      <EntityType Name="Payments">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <NavigationProperty Name="batch" Type="AccountingService.Batches" Nullable="false" Partner="payments">
+          <ReferentialConstraint Property="batch_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="batch_ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="paymentRunningNumber" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="paymentMethod" Type="Edm.String" MaxLength="10" Nullable="false"/>
+        <Property Name="voucherCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="paymentReferenceNumber" Type="Edm.String" MaxLength="100"/>
+        <Property Name="paymentAmount" Type="Edm.Decimal" Precision="15" Scale="2" Nullable="false"/>
+        <Property Name="depositReferenceNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="bankTransactionNumber" Type="Edm.String" MaxLength="100"/>
+        <Property Name="bankCode" Type="Edm.String" MaxLength="10"/>
+        <Property Name="edcTerminalId" Type="Edm.String" MaxLength="50"/>
+        <Property Name="edcApprovalCode" Type="Edm.String" MaxLength="50"/>
+      </EntityType>
+      <EntityType Name="JournalEntryPostings">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <NavigationProperty Name="batch" Type="AccountingService.Batches" Nullable="false" Partner="journalEntryPostings">
+          <ReferentialConstraint Property="batch_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="batch_ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="JournalEntryCompanyCode" Type="Edm.String" MaxLength="4"/>
+        <Property Name="JournalEntryDocumentNumber" Type="Edm.String" MaxLength="10"/>
+        <Property Name="JournalEntryYear" Type="Edm.String" MaxLength="4"/>
+        <Property Name="JournalEntryStatus" Type="Edm.String" MaxLength="10"/>
+        <NavigationProperty Name="messages" Type="Collection(AccountingService.JournalEntryMessages)" Partner="journalEntryPosting">
+          <OnDelete Action="Cascade"/>
+        </NavigationProperty>
+      </EntityType>
+      <EntityType Name="JournalEntryMessages">
+        <Key>
+          <PropertyRef Name="ID"/>
+        </Key>
+        <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+        <NavigationProperty Name="journalEntryPosting" Type="AccountingService.JournalEntryPostings" Nullable="false" Partner="messages">
+          <ReferentialConstraint Property="journalEntryPosting_ID" ReferencedProperty="ID"/>
+        </NavigationProperty>
+        <Property Name="journalEntryPosting_ID" Type="Edm.Guid" Nullable="false"/>
+        <Property Name="lineNumber" Type="Edm.Int32" Nullable="false"/>
+        <Property Name="message" Type="Edm.String" MaxLength="500" Nullable="false"/>
+        <Property Name="msgType" Type="Edm.String" MaxLength="1"/>
+      </EntityType>
+      <ComplexType Name="BatchInput">
+        <Property Name="hisDocumentType" Type="Edm.String" MaxLength="25"/>
+        <Property Name="hospitalCode" Type="Edm.String" MaxLength="20"/>
+        <Property Name="accountingDocumentNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="billDate" Type="Edm.Date"/>
+        <Property Name="cashierUsername" Type="Edm.String" MaxLength="100"/>
+        <Property Name="currency" Type="Edm.String" MaxLength="3"/>
+        <Property Name="hospitalNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="visitNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="payorCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="oneTimePayorName1" Type="Edm.String" MaxLength="200"/>
+        <Property Name="oneTimePayorName2" Type="Edm.String" MaxLength="200"/>
+        <Property Name="coverageType" Type="Edm.String" MaxLength="50"/>
+        <Property Name="patientGroup" Type="Edm.String" MaxLength="50"/>
+        <Property Name="marketChannel" Type="Edm.String" MaxLength="50"/>
+        <Property Name="referenceAccountingDocumentNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="discountHeaderAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="items" Type="Collection(AccountingService.ItemInput)" Nullable="true"/>
+        <Property Name="payments" Type="Collection(AccountingService.PaymentInput)" Nullable="true"/>
+      </ComplexType>
+      <ComplexType Name="ItemInput">
+        <Property Name="itemNumber" Type="Edm.Int32"/>
+        <Property Name="itemCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="itemName" Type="Edm.String" MaxLength="200"/>
+        <Property Name="packageCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="totalAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="discountAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="netAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="taxAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="taxCode" Type="Edm.String" MaxLength="20"/>
+        <Property Name="requestingDepartmentCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="performingDepartmentCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="doctorCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="doctorName" Type="Edm.String" MaxLength="200"/>
+        <Property Name="quantity" Type="Edm.Decimal" Precision="10" Scale="3"/>
+        <Property Name="unitOfMeasure" Type="Edm.String" MaxLength="20"/>
+        <Property Name="patientType" Type="Edm.String" MaxLength="20"/>
+        <Property Name="orderCategory" Type="Edm.String" MaxLength="50"/>
+        <Property Name="orderSubCategory" Type="Edm.String" MaxLength="50"/>
+        <Property Name="billingGroup" Type="Edm.String" MaxLength="50"/>
+        <Property Name="billingSubGroup" Type="Edm.String" MaxLength="50"/>
+      </ComplexType>
+      <ComplexType Name="PaymentInput">
+        <Property Name="paymentRunningNumber" Type="Edm.Int32"/>
+        <Property Name="paymentMethod" Type="Edm.String" MaxLength="10"/>
+        <Property Name="voucherCode" Type="Edm.String" MaxLength="50"/>
+        <Property Name="paymentReferenceNumber" Type="Edm.String" MaxLength="100"/>
+        <Property Name="paymentAmount" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="depositReferenceNumber" Type="Edm.String" MaxLength="50"/>
+        <Property Name="bankTransactionNumber" Type="Edm.String" MaxLength="100"/>
+        <Property Name="bankCode" Type="Edm.String" MaxLength="10"/>
+        <Property Name="edcTerminalId" Type="Edm.String" MaxLength="50"/>
+        <Property Name="edcApprovalCode" Type="Edm.String" MaxLength="50"/>
+      </ComplexType>
+      <Action Name="import" IsBound="false">
+        <Parameter Name="batches" Type="Collection(AccountingService.BatchInput)" Nullable="true"/>
+        <ReturnType Type="Edm.String"/>
+      </Action>
+      <Action Name="postFI" IsBound="false">
+        <Parameter Name="hisDocumentType" Type="Edm.String"/>
+        <Parameter Name="billDate" Type="Edm.Date"/>
+        <Parameter Name="batchId" Type="Edm.Guid"/>
+        <ReturnType Type="Edm.String"/>
+      </Action>
+      <Annotations Target="AccountingService.Batches/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="AccountingService.Batches/hisDocumentType">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_OPD"/>
+              <PropertyValue Property="Value" String="INVOICE_OPD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_IPD_INTERIM"/>
+              <PropertyValue Property="Value" String="INVOICE_IPD_INTERIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_IPD_FINAL"/>
+              <PropertyValue Property="Value" String="INVOICE_IPD_FINAL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_OPD"/>
+              <PropertyValue Property="Value" String="RECEIPT_OPD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_IPD_INTERIM"/>
+              <PropertyValue Property="Value" String="RECEIPT_IPD_INTERIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_IPD_FINAL"/>
+              <PropertyValue Property="Value" String="RECEIPT_IPD_FINAL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ONWARD"/>
+              <PropertyValue Property="Value" String="ONWARD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CREDIT_NOTE"/>
+              <PropertyValue Property="Value" String="CREDIT_NOTE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEBIT_NOTE"/>
+              <PropertyValue Property="Value" String="DEBIT_NOTE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEPOSIT"/>
+              <PropertyValue Property="Value" String="DEPOSIT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="REFUND_DEPOSIT"/>
+              <PropertyValue Property="Value" String="REFUND_DEPOSIT"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AccountingService.Items/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="AccountingService.Payments/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="AccountingService.Payments/paymentMethod">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CASH"/>
+              <PropertyValue Property="Value" String="CASH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TRANSFER"/>
+              <PropertyValue Property="Value" String="TRANSFER"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EDC"/>
+              <PropertyValue Property="Value" String="EDC"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="QR"/>
+              <PropertyValue Property="Value" String="QR"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="VOUCHER"/>
+              <PropertyValue Property="Value" String="VOUCHER"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEPOSIT"/>
+              <PropertyValue Property="Value" String="DEPOSIT"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AccountingService.Payments/bankCode">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BBL"/>
+              <PropertyValue Property="Value" String="BBL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KBANK"/>
+              <PropertyValue Property="Value" String="KBANK"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KTB"/>
+              <PropertyValue Property="Value" String="KTB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TTB"/>
+              <PropertyValue Property="Value" String="TTB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="SCB"/>
+              <PropertyValue Property="Value" String="SCB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BAY"/>
+              <PropertyValue Property="Value" String="BAY"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KKP"/>
+              <PropertyValue Property="Value" String="KKP"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CIMBT"/>
+              <PropertyValue Property="Value" String="CIMBT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TISCO"/>
+              <PropertyValue Property="Value" String="TISCO"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="UOBT"/>
+              <PropertyValue Property="Value" String="UOBT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TCD"/>
+              <PropertyValue Property="Value" String="TCD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LHFG"/>
+              <PropertyValue Property="Value" String="LHFG"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ICBCT"/>
+              <PropertyValue Property="Value" String="ICBCT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="SME"/>
+              <PropertyValue Property="Value" String="SME"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BAAC"/>
+              <PropertyValue Property="Value" String="BAAC"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EXIM"/>
+              <PropertyValue Property="Value" String="EXIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="GSB"/>
+              <PropertyValue Property="Value" String="GSB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="GHB"/>
+              <PropertyValue Property="Value" String="GHB"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AccountingService.JournalEntryPostings/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="AccountingService.JournalEntryMessages/ID">
+        <Annotation Term="Core.ComputedDefaultValue" Bool="true"/>
+      </Annotations>
+      <Annotations Target="AccountingService.BatchInput/hisDocumentType">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_OPD"/>
+              <PropertyValue Property="Value" String="INVOICE_OPD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_IPD_INTERIM"/>
+              <PropertyValue Property="Value" String="INVOICE_IPD_INTERIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="INVOICE_IPD_FINAL"/>
+              <PropertyValue Property="Value" String="INVOICE_IPD_FINAL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_OPD"/>
+              <PropertyValue Property="Value" String="RECEIPT_OPD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_IPD_INTERIM"/>
+              <PropertyValue Property="Value" String="RECEIPT_IPD_INTERIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="RECEIPT_IPD_FINAL"/>
+              <PropertyValue Property="Value" String="RECEIPT_IPD_FINAL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ONWARD"/>
+              <PropertyValue Property="Value" String="ONWARD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CREDIT_NOTE"/>
+              <PropertyValue Property="Value" String="CREDIT_NOTE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEBIT_NOTE"/>
+              <PropertyValue Property="Value" String="DEBIT_NOTE"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEPOSIT"/>
+              <PropertyValue Property="Value" String="DEPOSIT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="REFUND_DEPOSIT"/>
+              <PropertyValue Property="Value" String="REFUND_DEPOSIT"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AccountingService.PaymentInput/paymentMethod">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CASH"/>
+              <PropertyValue Property="Value" String="CASH"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TRANSFER"/>
+              <PropertyValue Property="Value" String="TRANSFER"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EDC"/>
+              <PropertyValue Property="Value" String="EDC"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="QR"/>
+              <PropertyValue Property="Value" String="QR"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="VOUCHER"/>
+              <PropertyValue Property="Value" String="VOUCHER"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="DEPOSIT"/>
+              <PropertyValue Property="Value" String="DEPOSIT"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+      <Annotations Target="AccountingService.PaymentInput/bankCode">
+        <Annotation Term="Validation.AllowedValues">
+          <Collection>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BBL"/>
+              <PropertyValue Property="Value" String="BBL"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KBANK"/>
+              <PropertyValue Property="Value" String="KBANK"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KTB"/>
+              <PropertyValue Property="Value" String="KTB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TTB"/>
+              <PropertyValue Property="Value" String="TTB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="SCB"/>
+              <PropertyValue Property="Value" String="SCB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BAY"/>
+              <PropertyValue Property="Value" String="BAY"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="KKP"/>
+              <PropertyValue Property="Value" String="KKP"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="CIMBT"/>
+              <PropertyValue Property="Value" String="CIMBT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TISCO"/>
+              <PropertyValue Property="Value" String="TISCO"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="UOBT"/>
+              <PropertyValue Property="Value" String="UOBT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="TCD"/>
+              <PropertyValue Property="Value" String="TCD"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="LHFG"/>
+              <PropertyValue Property="Value" String="LHFG"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="ICBCT"/>
+              <PropertyValue Property="Value" String="ICBCT"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="SME"/>
+              <PropertyValue Property="Value" String="SME"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="BAAC"/>
+              <PropertyValue Property="Value" String="BAAC"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="EXIM"/>
+              <PropertyValue Property="Value" String="EXIM"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="GSB"/>
+              <PropertyValue Property="Value" String="GSB"/>
+            </Record>
+            <Record Type="Validation.AllowedValue">
+              <Annotation Term="Core.SymbolicName" String="GHB"/>
+              <PropertyValue Property="Value" String="GHB"/>
+            </Record>
+          </Collection>
+        </Annotation>
+      </Annotations>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

@@ -1,0 +1,17 @@
+{
+  "requires": {
+    "[hybrid]": {
+      "db": {
+        "kind": "postgres",
+        "credentials": {
+          "host": "localhost",
+          "port": 15432,
+          "database": "wAKpenFgiGwb",
+          "user": "2c72a660d3a2",
+          "password": "73ce66606dc57470c81826cdfb119",
+          "ssl": { "rejectUnauthorized": false }
+        }
+      }
+    }
+  }
+}
