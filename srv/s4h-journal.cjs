@@ -13,7 +13,13 @@ async function getCredentials() {
         .find(s => s.label === 'destination' ||
                    (Array.isArray(s.tags) && s.tags.includes('destination')));
 
-    if (!destSvc) return null;
+    if (!destSvc) {
+        const url  = process.env.S4H_URL;
+        const user = process.env.S4H_USERNAME;
+        const pass = process.env.S4H_PASSWORD;
+        if (url && user && pass) return { username: user, password: pass, baseUrl: url };
+        return null;
+    }
 
     const c = destSvc.credentials;
     const tokenRes = await fetch(`${c.url}/oauth/token`, {
@@ -44,6 +50,26 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
     const lines = [];
     const noDiscount = ['CREDIT_NOTE', 'DEBIT_NOTE'].includes(hisDocumentType);
 
+    const buildAccountAssignment = (glAccount, costCenter, item) => {
+        const base = { CostCenter: costCenter };
+        if (/^[45]/.test(glAccount)) {
+            return {
+                ...base,
+                'n1:YY1_HospitalNumber':   batch.hospitalNumber,
+                'n1:YY1_VisitNumber':      batch.visitNumber,
+                'n1:YY1_CoverageCode':     batch.coverageType,
+                'n1:YY1_PatientGroup':     batch.patientGroup,
+                'n1:YY1_MarketChannel':    batch.marketChannel,
+                'n1:YY1_PatientType':      item.patientType,
+                'n1:YY1_OrderCategory':    item.orderCategory,
+                'n1:YY1_OrderSubCategory': item.orderSubCategory,
+                'n1:YY1_RequestDeptCode':  item.requestingDepartmentCode,
+                'n1:YY1_PerformDeptCode':  item.performingDepartmentCode,
+            };
+        }
+        return base;
+    };
+
     for (const item of items) {
         const revenueGL  = revenueGLByItemCode[item.itemCode];
         const costCenter = costCenterByDept[item.requestingDepartmentCode] ?? '';
@@ -59,20 +85,8 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
                     attributes: { currencyCode: currency },
                     $value:     parseFloat(item.totalAmount || 0)
                 },
-                Tax: { TaxCode: 'O0' },
-                AccountAssignment: {
-                    CostCenter:                costCenter,
-                    'n1:YY1_HospitalNumber':   batch.hospitalNumber,
-                    'n1:YY1_VisitNumber':      batch.visitNumber,
-                    'n1:YY1_CoverageCode':     batch.coverageType,
-                    'n1:YY1_PatientGroup':     batch.patientGroup,
-                    'n1:YY1_MarketChannel':    batch.marketChannel,
-                    'n1:YY1_PatientType':      item.patientType,
-                    'n1:YY1_OrderCategory':    item.orderCategory,
-                    'n1:YY1_OrderSubCategory': item.orderSubCategory,
-                    'n1:YY1_RequestDeptCode':  item.requestingDepartmentCode,
-                    'n1:YY1_PerformDeptCode':  item.performingDepartmentCode,
-                }
+                Tax: { TaxCode: item.taxCode },
+                AccountAssignment: buildAccountAssignment(revenueGL.glRevenue, costCenter, item)
             });
         }
 
@@ -85,8 +99,8 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
                     attributes: { currencyCode: currency },
                     $value:     parseFloat(item.discountAmount || 0)
                 },
-                Tax: { TaxCode: 'O0' },
-                AccountAssignment: { CostCenter: costCenter }
+                Tax: { TaxCode: item.taxCode },
+                AccountAssignment: buildAccountAssignment(revenueGL.glDiscontItem, costCenter, item)
             });
         }
 
@@ -99,8 +113,8 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
                     attributes: { currencyCode: currency },
                     $value:     parseFloat(revenueGL.standardCost || 0)
                 },
-                Tax: { TaxCode: 'O0' },
-                AccountAssignment: { CostCenter: costCenter }
+                Tax: { TaxCode: item.taxCode },
+                AccountAssignment: buildAccountAssignment(revenueGL.glCost, costCenter, item)
             });
         }
 
@@ -113,8 +127,8 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
                     attributes: { currencyCode: currency },
                     $value:     parseFloat(revenueGL.standardCost || 0)
                 },
-                Tax: { TaxCode: 'O0' },
-                AccountAssignment: { CostCenter: costCenter }
+                Tax: { TaxCode: item.taxCode },
+                AccountAssignment: buildAccountAssignment(revenueGL.glReconcileCost, costCenter, item)
             });
         }
     }
@@ -126,11 +140,11 @@ function buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCente
 // BUILDER 2: สร้าง payment lines
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildPaymentLines({ payments, paymentGLByMethod, dcRow, currency }) {
+function buildPaymentLines(hisDocumentType, { payments, paymentGLByMethod, dcRow, currency }) {
     return payments.map(payment => {
         const glAccount = paymentGLByMethod[payment.paymentMethod];
         if (!glAccount) throw new Error(`PaymentMethodGLMapping not found for paymentMethod=${payment.paymentMethod}`);
-        return {
+        const line = {
             ReferenceDocumentItem: '',
             GLAccount:             glAccount,
             DebitCreditCode:       dcRow?.payment || 'D',
@@ -140,6 +154,8 @@ function buildPaymentLines({ payments, paymentGLByMethod, dcRow, currency }) {
             },
             AccountAssignment: { CostCenter: '11AA-10000' }
         };
+        if (hisDocumentType === 'ONWARD') line.DocumentItemText = 'Unbilled';
+        return line;
     });
 }
 
@@ -157,6 +173,8 @@ function buildRequestBody({ companyCode, documentDate, postingDate, documentRefe
 
     const taxBaseAmount = itemLines.reduce((sum, line) =>
         sum + Math.abs(line.AmountInTransactionCurrency.$value), 0);
+
+    const firstTaxCode = itemLines.find(l => l.Tax?.TaxCode)?.Tax?.TaxCode || 'O0';
 
     return {
         MessageHeader: {
@@ -182,7 +200,7 @@ function buildRequestBody({ companyCode, documentDate, postingDate, documentRefe
                 TaxDeterminationDate:          postingDate,
                 Item:                          soapItems,
                 ProductTaxItem: [{
-                    TaxCode:               'O0',
+                    TaxCode:               firstTaxCode,
                     TaxItemClassification: 'MWS',
                     AmountInTransactionCurrency: {
                         attributes: { currencyCode: currency },
@@ -232,12 +250,14 @@ async function postJournalEntry({ companyCode, documentDate, postingDate,
     }
 
     const itemLines    = buildItemLines(hisDocumentType, { items, revenueGLByItemCode, costCenterByDept, dcRow, currency, batch });
-    const paymentLines = buildPaymentLines({ payments, paymentGLByMethod, dcRow, currency });
+    const paymentLines = buildPaymentLines(hisDocumentType, { payments, paymentGLByMethod, dcRow, currency });
     const requestBody  = buildRequestBody({
         companyCode, documentDate, postingDate, documentReferenceID,
         currency, username: creds.username, sapDocumentType,
         itemLines, paymentLines
     });
+
+    // console.log('[s4h] REQUEST BODY:', JSON.stringify(requestBody, null, 2));
 
     const client = await soap.createClientAsync(WSDL_PATH, { endpoint: creds.baseUrl + SOAP_PATH });
     client.setSecurity(new soap.BasicAuthSecurity(creds.username, creds.password));

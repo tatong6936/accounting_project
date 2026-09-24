@@ -26,6 +26,7 @@ type PaymentMethod : String(10) enum {
     QR;
     VOUCHER;
     DEPOSIT;
+    ONWARD;
 }
 
 type BankCode : String(10) enum {
